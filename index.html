@@ -10584,6 +10584,20 @@ function exportSnapshotHtml() {
 // ============================================================
 // AUTHENTICATION SYSTEM (Firebase Auth — real per-person accounts)
 // ============================================================
+// Firebase must be initialized before anything below uses firebase.auth()
+// or firebase.firestore(), so this config/init runs first.
+const firebaseConfig = {
+    apiKey: "AIzaSyDFZ3stcwwW20asvNOQNbzaM43gN0swqxY",
+    authDomain: "gaki-4c2e4.firebaseapp.com",
+    projectId: "gaki-4c2e4",
+    storageBucket: "gaki-4c2e4.firebasestorage.app",
+    messagingSenderId: "651694431207",
+    appId: "1:651694431207:web:f803bbc874f813af833b42"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const sharedDocRef = db.collection('gaki').doc('sharedData');
+
 // Each team member has their own email/password account, created by the
 // admin in the Firebase console (Authentication -> Users -> Add user).
 // The admin can instantly stop anyone's access from that same screen by
@@ -10785,18 +10799,6 @@ let inventoryData = [];
 // ============================================================
 // FIREBASE (shared live database so every device sees the same data)
 // ============================================================
-const firebaseConfig = {
-    apiKey: "AIzaSyDFZ3stcwwW20asvNOQNbzaM43gN0swqxY",
-    authDomain: "gaki-4c2e4.firebaseapp.com",
-    projectId: "gaki-4c2e4",
-    storageBucket: "gaki-4c2e4.firebasestorage.app",
-    messagingSenderId: "651694431207",
-    appId: "1:651694431207:web:f803bbc874f813af833b42"
-};
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-const sharedDocRef = db.collection('gaki').doc('sharedData');
-
 let firestoreReady = false;      // becomes true once we've received the first snapshot
 let applyingRemoteUpdate = false; // guards against re-broadcasting our own incoming update
 let saveDebounceTimer = null;
