@@ -10327,6 +10327,9 @@ function applySnapshot(snapshot) {
     if (snapshot.customRecipients) localStorage.setItem('pharmacy_custom_recipients', JSON.stringify(snapshot.customRecipients));
     if (snapshot.customLocations) localStorage.setItem('pharmacy_locations_seeded', '1');
     if (snapshot.savedAt) localStorage.setItem('pharmacy_last_imported_snapshot', snapshot.savedAt);
+    // This data was explicitly chosen by the user - it should be pushed up to
+    // the shared database, not silently overwritten by what's already there.
+    localStorage.setItem('pharmacy_pending_push', '1');
 }
 
 // Runs on every page load. If this copy of the file has a snapshot baked in
@@ -10803,31 +10806,39 @@ let firestoreReady = false;      // becomes true once we've received the first s
 let applyingRemoteUpdate = false; // guards against re-broadcasting our own incoming update
 let saveDebounceTimer = null;
 
-// Pushes the current in-memory data up to Firestore (debounced so rapid edits
-// don't spam the network). This is what makes changes visible to everyone else.
+// Pushes the current in-memory data up to Firestore immediately - no delay,
+// so a quick refresh right after saving can never race ahead of the write
+// and pull older data back down.
 function pushToFirestore() {
     if (applyingRemoteUpdate) return; // don't echo back data we just received
-    clearTimeout(saveDebounceTimer);
-    saveDebounceTimer = setTimeout(() => {
-        sharedDocRef.set({
-            inventoryData,
-            receivingData,
-            issuingData,
-            returnsData,
-            customLocations,
-            customUnits,
-            customSuppliers,
-            customReceivedBy,
-            customRecipients,
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        }, { merge: true }).catch(e => console.warn('Firestore save error:', e));
-    }, 400);
+    sharedDocRef.set({
+        inventoryData,
+        receivingData,
+        issuingData,
+        returnsData,
+        customLocations,
+        customUnits,
+        customSuppliers,
+        customReceivedBy,
+        customRecipients,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true }).catch(e => console.warn('Firestore save error:', e));
 }
 
 // Listens for changes from Firestore (made by this device or any other) and
 // updates the screen live. This is what makes the app "multi-user real-time".
 function startFirestoreSync() {
     sharedDocRef.onSnapshot((doc) => {
+        // If the user just loaded/merged data from a file, that data should
+        // WIN and get pushed up - not get silently overwritten by whatever
+        // was already sitting in the shared database.
+        if (localStorage.getItem('pharmacy_pending_push') === '1') {
+            localStorage.removeItem('pharmacy_pending_push');
+            firestoreReady = true;
+            pushToFirestore();
+            return;
+        }
+
         if (!doc.exists) {
             // First time ever — seed Firestore with whatever is currently local.
             firestoreReady = true;
