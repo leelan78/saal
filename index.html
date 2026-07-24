@@ -875,6 +875,7 @@
             </div>
             <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
                 <span style="color:white; font-weight:600;" id="loggedUser">👤 Godfred</span>
+                <button onclick="showManageTeam()" id="manageTeamBtn" style="display:none; background:rgba(255,255,255,0.2); color:white; border:1px solid rgba(255,255,255,0.3); padding:8px 16px; border-radius:8px; cursor:pointer;">👥 Manage Team</button>
                 <button onclick="showChangePassword()" style="background:rgba(255,255,255,0.2); color:white; border:1px solid rgba(255,255,255,0.3); padding:8px 16px; border-radius:8px; cursor:pointer;">🔑 Change Password</button>
                 <button onclick="logout()" style="background:#c53030; color:white; border:none; padding:8px 16px; border-radius:8px; cursor:pointer;">🚪 Logout</button>
             </div>
@@ -883,6 +884,7 @@
         <div class="tab">
             <button class="tablinks" onclick="openTab(event, 'Receiving')" id="defaultOpen">📦 RECEIVING</button>
             <button class="tablinks" onclick="openTab(event, 'Issuing')">📤 ISSUING</button>
+            <button class="tablinks" onclick="openTab(event, 'Requisitions')">🙋 REQUESTS</button>
             <button class="tablinks active" onclick="openTab(event, 'Inventory')">📋 INVENTORY</button>
             <button class="tablinks" onclick="openTab(event, 'ExpiryTracker')">⏰ EXPIRY</button>
             <button class="tablinks" onclick="openTab(event, 'Dashboard')">📊 DASHBOARD</button>
@@ -1130,6 +1132,86 @@
                     </thead>
                     <tbody id="issuingBody"><tr><td>2026-07-21</td><td>Rocephin inj 2G</td><td>A0</td><td></td><td>2</td><td>Cartons</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-21</td><td>Citrizen Syrup ( Cetibed)</td><td>E0</td><td></td><td>270</td><td>Bottles</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-21</td><td>Progynova 2MG</td><td>D1</td><td></td><td>50</td><td>Packs</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-21</td><td>Propofol inj</td><td>H-3-2</td><td></td><td>4</td><td>Boxes</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-20</td><td>Propofol injection 10 mg</td><td>H-3-3</td><td></td><td>30</td><td>Packs</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-20</td><td>Citro C (Ascorbic Acid) TB</td><td>B2</td><td></td><td>1</td><td>Cartons</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-20</td><td>G-Ceftriaxone</td><td>IR</td><td></td><td>3</td><td>Cartons</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-20</td><td>Exforge 10/160/12.5 mg</td><td>F-3-2</td><td></td><td>100</td><td>Packs</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-18</td><td>Rocephin inj 2G</td><td>A0</td><td></td><td>5</td><td>Cartons</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-18</td><td>Zinnacef  Injection 750 MG (Cefuroxime)</td><td>H-2-2</td><td></td><td>94</td><td>Vials</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-18</td><td>Calcury Natural</td><td>I-3-3</td><td></td><td>50</td><td>Bottles</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-18</td><td>Progynova 2MG</td><td>D1</td><td></td><td>50</td><td>Packs</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-18</td><td>Doreta 37.5MG tB</td><td>B0</td><td></td><td>181</td><td>Packs</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-18</td><td>Atorvastatin 40 mg</td><td>G-1-2</td><td></td><td>100</td><td>Packs</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-18</td><td>Ibuprofen 400 mg TB</td><td>I-4-1</td><td></td><td>30</td><td>Packs</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-18</td><td>Noradrenaline injection</td><td>H-3-3</td><td></td><td>10</td><td>Vials</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-18</td><td>M2-Tone Tablet</td><td>E0</td><td></td><td>80</td><td>Packs</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-18</td><td>Argesun injection 120 mg</td><td>C0</td><td></td><td>20</td><td>Vials</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-18</td><td>Enterogermina Probiotic susp 5ml 10's</td><td>B0</td><td></td><td>5</td><td>Packs</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-18</td><td>Doreta 37.5MG tB</td><td>B0</td><td></td><td>20</td><td>Packs</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-18</td><td>Argesun injection 180 mg</td><td>C0</td><td></td><td>20</td><td>Vials</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-17</td><td>Rocephin inj 2G</td><td>A0</td><td></td><td>1</td><td>Cartons</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-17</td><td>Ferrous Sulphate TB 200 MG</td><td>E0</td><td></td><td>40</td><td>Boxes</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-17</td><td>Exatob (Tobramycin) eye drop</td><td>Cross Dock</td><td></td><td>100</td><td>Bottles</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-17</td><td>Baclofen  TB 10 mg</td><td>Cross Dock</td><td></td><td>100</td><td>Packs</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-17</td><td>Citrizen Syrup ( Cetibed)</td><td>Cross Dock</td><td></td><td>300</td><td>Bottles</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-17</td><td>Hydrogen Peroxide 200 ml</td><td>F-2-3</td><td></td><td>72</td><td>Bottles</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-17</td><td>Citro C (Ascorbic Acid) TB</td><td>B2</td><td></td><td>1</td><td>Cartons</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-17</td><td>Sirdalud 2 mg TB</td><td>I-4-1</td><td></td><td>34</td><td>Packs</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-16</td><td>Ferrous Sulphate TB 200 MG</td><td>E0</td><td></td><td>20</td><td>Boxes</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-16</td><td>Atorvastatin 20 mg</td><td>G-1-2</td><td></td><td>200</td><td>Packs</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-16</td><td>Pariet 20 mg TB</td><td>D0</td><td></td><td>140</td><td>Packs</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-16</td><td>Rocephin injection 1G</td><td>A2</td><td></td><td>3</td><td>Cartons</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-16</td><td>Stagyl (Secnidazole) 1G</td><td>I-4-2</td><td></td><td>10</td><td>Packs</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-16</td><td>Omeprazole Sodium inj 40 mg (HABIMEZ)</td><td>B0</td><td></td><td>300</td><td>Vials</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-16</td><td>Tothema</td><td>E2</td><td></td><td>11</td><td>Cartons</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-16</td><td>Bells Paraffin Liquid 150mL</td><td>G-3-3</td><td></td><td>10</td><td>Bottles</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-16</td><td>Citro C (Ascorbic Acid) TB</td><td>B2</td><td></td><td>4</td><td>Cartons</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-16</td><td>Sirdalud 2 mg TB</td><td>I-4-1</td><td></td><td>90</td><td>Packs</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-16</td><td>Xarelto 20 mg TB</td><td>F-3-1</td><td></td><td>20</td><td>Packs</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-16</td><td>Methyldopa 250 mg</td><td>F-3-1</td><td></td><td>50</td><td>Packs</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-16</td><td>Xarelto 15 mg TB</td><td>F-3-1</td><td></td><td>7</td><td>Packs</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-16</td><td>Aerius Oral solution</td><td>E1</td><td></td><td>20</td><td>Bottles</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-16</td><td>Ondansetron Hydrochloride inj</td><td>H-4-3</td><td></td><td>10</td><td>Packs</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-16</td><td>Clexane 40 mg injection 2's</td><td>G-4-2</td><td></td><td>504</td><td>Packs</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-16</td><td>Galvusmet  50/1000 mg Tb</td><td>D1</td><td></td><td>20</td><td>Boxes</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-16</td><td>Rabeprazole Sodium 20 mg TB</td><td>I-3-1</td><td></td><td>45</td><td>Packs</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-16</td><td>Nexium Sachets</td><td>I-2-1</td><td></td><td>5</td><td>Boxes</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-16</td><td>Baclofen  TB 10 mg</td><td>Cross Dock</td><td></td><td>250</td><td>Packs</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-16</td><td>Rocephin inj 2G</td><td>A0</td><td></td><td>30</td><td>Vials</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-15</td><td>Ciprofloxacin infusion</td><td>A1</td><td></td><td>1</td><td>Cartons</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-15</td><td>Simple Linctus (Dannex cough) syrup</td><td>D0</td><td></td><td>100</td><td>Bottles</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-15</td><td>Atorvastatin 10 mg TAB</td><td>G-1-2</td><td></td><td>50</td><td>Packs</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-15</td><td>Atorvastatin 40 mg</td><td>G-1-2</td><td></td><td>50</td><td>Packs</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-15</td><td>Atorvastatin 20 mg</td><td>G-1-2</td><td></td><td>50</td><td>Packs</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-15</td><td>Anti RHO-D injection</td><td>Fridge</td><td></td><td>20</td><td>Packs</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-15</td><td>Zinnat TB 500 mg</td><td>Cross Dock</td><td></td><td>40</td><td>Packs</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-15</td><td>Pulmicort 0.5 mg Nebules</td><td>Cross Dock</td><td></td><td>2</td><td>Boxes</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-14</td><td>Exforge 10/160/12.5 mg</td><td>F-3-2</td><td></td><td>200</td><td>Cartons</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-14</td><td>Nexium Sachets</td><td>I-2-1</td><td></td><td>34</td><td>Boxes</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-14</td><td>Progynova</td><td>D1</td><td></td><td>150</td><td>Packs</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-14</td><td>Ephedrine Injection 50 mg 1's</td><td>H-3-3</td><td></td><td>200</td><td>Ampoules</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-14</td><td>Fybogel</td><td>I-3-2</td><td></td><td>25</td><td>Boxes</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-14</td><td>Salbutamol Nebuliser solution 5 mg</td><td>B1</td><td></td><td>30</td><td>Boxes</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-14</td><td>Duphaston (Dydrogesterone)</td><td>G-2-1</td><td></td><td>300</td><td>Packs</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-14</td><td>Salbutanol Nebuliser solution 2.5 mg</td><td>B2</td><td></td><td>30</td><td>Packs</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-14</td><td>Rocephin inj 2G</td><td>A0</td><td></td><td>1</td><td>Cartons</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-14</td><td>Nifecard XL 30 mg TB</td><td>G-3-1</td><td></td><td>46</td><td>Packs</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-14</td><td>Isoflurane I.P (isifrane) 250 Liquid</td><td>G-2-3</td><td></td><td>2</td><td>Packs</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-13</td><td>Carbimazole 5 mg TB (UK)</td><td>F-4-1</td><td></td><td>40</td><td>Packs</td><td></td><td></td></tr><tr><td>2026-07-13</td><td>Polygynax Capsules 12's</td><td>G-2-1</td><td></td><td>40</td><td>Packs</td><td></td><td></td></tr><tr><td>2026-07-13</td><td>cyclogest 400</td><td>D1</td><td></td><td>100</td><td></td><td></td><td></td></tr><tr><td>2026-07-13</td><td>Atacand 8 mg TB</td><td>F-1-3</td><td></td><td>56</td><td>Packs</td><td></td><td></td></tr><tr><td>2026-07-13</td><td>Duphaston (Dydrogesterone)</td><td>G-2-1</td><td></td><td>50</td><td>Packs</td><td></td><td></td></tr><tr><td>2026-07-13</td><td>Gabapentin 300 mg capsules</td><td>G-4-3</td><td></td><td>50</td><td>Packs</td><td></td><td></td></tr><tr><td>2026-07-13</td><td>Phlebodia 600 mg  TB</td><td>G-3-1</td><td></td><td>20</td><td>Packs</td><td></td><td></td></tr><tr><td>2026-07-13</td><td>Methyldopa 250 (Pharm -inter) TB</td><td>F-3-1</td><td></td><td>30</td><td>Packs</td><td></td><td></td></tr><tr><td>2026-07-13</td><td>Nostamine eye/nose Drops 10 ml</td><td>F-1-2</td><td></td><td>50</td><td>Bottles</td><td></td><td></td></tr><tr><td>2026-07-13</td><td>Microgynon 30 TB</td><td>G-2-1</td><td></td><td>13</td><td>Packs</td><td></td><td></td></tr><tr><td>2026-07-13</td><td>Atorvastatin 10 mg TAB</td><td>G-1-2</td><td></td><td>50</td><td>Packs</td><td></td><td></td></tr><tr><td>2026-07-13</td><td>Meronem injection 500 mg</td><td>G-4-1</td><td></td><td>40</td><td>Vials</td><td></td><td></td></tr><tr><td>2026-07-13</td><td>Tavanic TB 500 mg</td><td>G-2-2</td><td></td><td>100</td><td>Packs</td><td></td><td></td></tr><tr><td>2026-07-13</td><td>Clopidogrel 75 mg</td><td>F-2-2</td><td></td><td>15</td><td>Packs</td><td></td><td></td></tr><tr><td>2026-07-11</td><td>Dispersible Aspirin TB 75 mg</td><td>G-1-1</td><td></td><td>9</td><td>Packs</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-11</td><td>Nizoral Shampoo 100 ml</td><td>A0</td><td></td><td>50</td><td>Bottles</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-11</td><td>Nizoral Cream 2%</td><td>A0</td><td></td><td>50</td><td>Tubes</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-11</td><td>Microgynon 30 TB</td><td>G-2-1</td><td></td><td>30</td><td>Packs</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-11</td><td>Flucloxacillin Suspension</td><td>F-4-3</td><td></td><td>100</td><td>Bottles</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-11</td><td>Flucloxacillin Capsules 500 mg</td><td>F-4-2</td><td></td><td>200</td><td>Packs</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-11</td><td>Gabapentin 300 mg capsules</td><td>G-4-3</td><td></td><td>20</td><td>Packs</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-11</td><td>Bells Paraffin Liquid 150mL</td><td>G-3-3</td><td></td><td>60</td><td>Bottles</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-11</td><td>Motilium TB 10 mg</td><td>H-3-2</td><td></td><td>20</td><td>Packs</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-11</td><td>Caffeine Citrate 10 mg TB</td><td>I-4-2</td><td></td><td>10</td><td>Packs</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-11</td><td>Atacand 16 mg TB</td><td>D0</td><td></td><td>20</td><td>Packs</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-11</td><td>Lactulose 500 ml</td><td>B2</td><td></td><td>30</td><td>Bottles</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-11</td><td>Atacand 16 Plus</td><td>D0</td><td></td><td>10</td><td>Packs</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-11</td><td>Elocom Cream 1G</td><td>G-3-2</td><td></td><td>20</td><td>Packs</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-11</td><td>Dermovate Cream 30 mg</td><td>G-3-2</td><td></td><td>30</td><td>Packs</td><td>Asokore Mampong Pharmacy Unit. (S.A.A.L)</td><td>Godfred</td></tr><tr><td>2026-07-10</td><td>Losprino 75 mg</td><td>I-3-1</td><td></td><td>120</td><td>Packs</td><td></td><td></td></tr><tr><td>2026-07-10</td><td>Natrilix 1.5 mg</td><td>F-2-1</td><td></td><td>70</td><td>Packs</td><td></td><td></td></tr></tbody>
                 </table>
+            </div>
+        </div>
+
+        <!-- REQUISITIONS TAB -->
+        <div id="Requisitions" class="tabcontent" style="display: none;">
+            <div class="form-card">
+                <h3>🙋 Request Drugs</h3>
+                <div class="manual-entry-note">
+                    <strong>✏️ How this works:</strong> Submit a request with the drug and quantity you need. An admin will review it, may adjust the quantity, and approve or reject it. Approved requests move to the Issuing tab's pending list for final processing.
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>📅 Date *</label>
+                        <input type="date" id="reqDate" class="date-picker">
+                    </div>
+                    <div class="form-group">
+                        <label>💊 Drug / Item *</label>
+                        <input type="text" id="reqDrug" placeholder="Enter drug name" list="drugSuggestions2">
+                    </div>
+                    <div class="form-group">
+                        <label>📍 Location</label>
+                        <input type="text" id="reqLocation" list="locationList2" placeholder="Optional — auto-detected if left blank">
+                    </div>
+                    <div class="form-group">
+                        <label>📦 Quantity Requested *</label>
+                        <input type="number" id="reqQty" placeholder="0" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label>📏 Unit</label>
+                        <input type="text" id="reqUnit" list="unitList2" placeholder="Vials, Cartons, Packs...">
+                    </div>
+                    <div class="form-group">
+                        <label>📝 Notes</label>
+                        <input type="text" id="reqNotes" placeholder="Reason / department / anything useful">
+                    </div>
+                </div>
+                <div style="margin-top: 20px;">
+                    <button onclick="submitRequisition()">🙋 SUBMIT REQUEST</button>
+                </div>
+            </div>
+
+            <div class="form-card" id="pendingApprovalsCard" style="display:none;">
+                <h3>🔎 Pending Approvals (<span id="pendingApprovalsCount">0</span>)</h3>
+                <div class="table-wrapper">
+                    <table id="pendingApprovalsTable">
+                        <thead>
+                            <tr><th>Date</th><th>Drug/Item</th><th>Location</th><th>Requested Qty</th><th>Approve Qty</th><th>Unit</th><th>Requested By</th><th>Notes</th><th></th></tr>
+                        </thead>
+                        <tbody id="pendingApprovalsBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <h3>📜 <span id="requisitionsHistoryLabel">My Requests</span></h3>
+            <div class="table-wrapper">
+                <table id="requisitionsTable">
+                    <thead>
+                        <tr><th>Date</th><th>Drug/Item</th><th>Location</th><th>Qty Requested</th><th>Qty Approved</th><th>Unit</th><th>Requested By</th><th>Status</th><th>Handled By</th><th>Notes</th></tr>
+                    </thead>
+                    <tbody id="requisitionsBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- MANAGE TEAM MODAL (admin only) -->
+        <div id="manageTeamModal" class="modal">
+            <div class="modal-content">
+                <h3>👥 Manage Team Roles</h3>
+                <p style="color:#666; font-size:0.9em; margin-bottom:15px;">
+                    Promote a staff member to admin, or demote an admin back to staff. To disable someone's login entirely, use the Firebase console (Authentication → Users).
+                </p>
+                <div class="table-wrapper">
+                    <table id="teamRolesTable">
+                        <thead><tr><th>Email</th><th>Role</th><th></th></tr></thead>
+                        <tbody id="teamRolesBody"></tbody>
+                    </table>
+                </div>
+                <div style="margin-top:15px; text-align:right;">
+                    <button onclick="closeManageTeam()" class="btn-outline">Close</button>
+                </div>
             </div>
         </div>
 
@@ -10663,13 +10745,99 @@ function showLoginScreen() {
     document.getElementById("password").value = "";
 }
 
+// ============================================================
+// ROLES (admin vs staff) — stored in Firestore, one doc per team member.
+// The very first person ever to log in (when no team docs exist yet)
+// automatically becomes admin, so there's always at least one admin
+// without anyone needing to hand-configure it.
+// ============================================================
+let currentUserRole = "staff";
+let currentUserEmail = "";
+
+async function resolveUserRole(user) {
+    currentUserEmail = user.email;
+    const userRef = db.collection("gaki_users").doc(user.uid);
+    try {
+        const docSnap = await userRef.get();
+        if (docSnap.exists) {
+            currentUserRole = docSnap.data().role || "staff";
+        } else {
+            const anyUsers = await db.collection("gaki_users").limit(1).get();
+            const isFirstEver = anyUsers.empty;
+            currentUserRole = isFirstEver ? "admin" : "staff";
+            await userRef.set({
+                email: user.email,
+                role: currentUserRole,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        }
+    } catch (e) {
+        console.warn("Could not resolve user role, defaulting to staff:", e);
+        currentUserRole = "staff";
+    }
+
+    const manageBtn = document.getElementById("manageTeamBtn");
+    if (manageBtn) manageBtn.style.display = currentUserRole === "admin" ? "inline-block" : "none";
+    renderRequisitions();
+}
+
+// ============================================================
+// MANAGE TEAM (admin only) — promote/demote staff <-> admin
+// ============================================================
+async function showManageTeam() {
+    if (currentUserRole !== "admin") return;
+    document.getElementById("manageTeamModal").classList.add("active");
+    const tbody = document.getElementById("teamRolesBody");
+    tbody.innerHTML = "<tr><td colspan='3'>Loading...</td></tr>";
+    try {
+        const snap = await db.collection("gaki_users").orderBy("email").get();
+        tbody.innerHTML = "";
+        snap.forEach((doc) => {
+            const u = doc.data();
+            const row = tbody.insertRow();
+            row.insertCell(0).textContent = u.email || "(unknown)";
+            row.insertCell(1).textContent = u.role || "staff";
+            const actionCell = row.insertCell(2);
+            const btn = document.createElement("button");
+            btn.className = "btn-outline";
+            const isAdmin = u.role === "admin";
+            btn.textContent = isAdmin ? "Demote to Staff" : "Promote to Admin";
+            btn.onclick = () => setUserRole(doc.id, isAdmin ? "staff" : "admin");
+            actionCell.appendChild(btn);
+        });
+        if (snap.empty) tbody.innerHTML = "<tr><td colspan='3'>No team members yet — they'll appear here after their first login.</td></tr>";
+    } catch (e) {
+        tbody.innerHTML = "<tr><td colspan='3'>Could not load team list: " + e.message + "</td></tr>";
+    }
+}
+
+function closeManageTeam() {
+    document.getElementById("manageTeamModal").classList.remove("active");
+}
+
+async function setUserRole(uid, newRole) {
+    try {
+        await db.collection("gaki_users").doc(uid).set({ role: newRole }, { merge: true });
+        showManageTeam(); // refresh the list
+    } catch (e) {
+        alert("❌ Could not update role: " + e.message);
+    }
+}
+
+document.getElementById("manageTeamModal").addEventListener("click", function(e) {
+    if (e.target === this) closeManageTeam();
+});
+
 // Firebase tells us whenever someone signs in, signs out, or gets disabled
 // mid-session - this one listener drives the whole login/logout UI state.
 auth.onAuthStateChanged(function(user) {
     if (user) {
         enterApp(user.email);
+        resolveUserRole(user);
     } else {
         showLoginScreen();
+        currentUserRole = "staff";
+        currentUserEmail = "";
     }
 });
 
@@ -10798,6 +10966,7 @@ let receivingData = [];
 let issuingData = [];
 let returnsData = [];
 let inventoryData = [];
+let requisitions = [];
 
 // ============================================================
 // FIREBASE (shared live database so every device sees the same data)
@@ -10816,6 +10985,7 @@ function pushToFirestore() {
         receivingData,
         issuingData,
         returnsData,
+        requisitions,
         customLocations,
         customUnits,
         customSuppliers,
@@ -10851,6 +11021,7 @@ function startFirestoreSync() {
         receivingData = data.receivingData || [];
         issuingData = data.issuingData || [];
         returnsData = data.returnsData || [];
+        requisitions = data.requisitions || [];
         customLocations = data.customLocations || customLocations;
         customUnits = data.customUnits || customUnits;
         customSuppliers = data.customSuppliers || customSuppliers;
@@ -10867,12 +11038,205 @@ function startFirestoreSync() {
 
         if (systemInitialized) {
             renderAll();
+            renderRequisitions();
         }
         firestoreReady = true;
         applyingRemoteUpdate = false;
     }, (error) => {
         console.warn('Firestore sync error (staying on local data):', error);
     });
+}
+
+// ============================================================
+// REQUISITIONS (staff request drugs -> admin edits qty & approves ->
+// approved requests land in the Issuing tab's pending list for the
+// final processing step, same as any other issuing entry)
+// ============================================================
+
+function submitRequisition() {
+    const date = document.getElementById("reqDate").value;
+    const drug = document.getElementById("reqDrug").value.trim();
+    const location = document.getElementById("reqLocation").value.trim();
+    const qty = parseInt(document.getElementById("reqQty").value) || 0;
+    const unit = document.getElementById("reqUnit").value.trim();
+    const notes = document.getElementById("reqNotes").value.trim();
+
+    if (!date || !drug || qty <= 0) {
+        alert("Please fill Date, Drug/Item, and a valid Quantity!");
+        return;
+    }
+
+    const stockItem = inventoryData.find(i => i.name.toLowerCase() === drug.toLowerCase());
+    const resolvedLocation = location || (stockItem ? stockItem.location : "");
+    const resolvedUnit = unit || (stockItem ? stockItem.unit : "");
+
+    requisitions.push({
+        id: generateId(),
+        date: date,
+        drug: drug,
+        location: resolvedLocation,
+        qtyRequested: qty,
+        qtyApproved: null,
+        unit: resolvedUnit,
+        notes: notes,
+        requestedBy: currentUserEmail,
+        requestedAt: new Date().toISOString(),
+        status: "pending",
+        reviewedBy: "",
+        reviewedAt: ""
+    });
+
+    if (resolvedLocation) rememberLocationIfNew(resolvedLocation);
+    if (resolvedUnit) rememberUnitIfNew(resolvedUnit);
+
+    saveAll();
+    renderRequisitions();
+
+    document.getElementById("reqDrug").value = "";
+    document.getElementById("reqLocation").value = "";
+    document.getElementById("reqQty").value = "";
+    document.getElementById("reqUnit").value = "";
+    document.getElementById("reqNotes").value = "";
+    document.getElementById("reqDrug").focus();
+
+    alert("✅ Request submitted! An admin will review it.");
+}
+
+function renderRequisitions() {
+    const historyLabel = document.getElementById("requisitionsHistoryLabel");
+    const historyBody = document.getElementById("requisitionsBody");
+    const approvalsCard = document.getElementById("pendingApprovalsCard");
+    const approvalsBody = document.getElementById("pendingApprovalsBody");
+    const approvalsCount = document.getElementById("pendingApprovalsCount");
+    if (!historyBody) return; // Requisitions tab not in DOM yet
+
+    const isAdmin = currentUserRole === "admin";
+    if (historyLabel) historyLabel.textContent = isAdmin ? "All Requests" : "My Requests";
+
+    // --- Pending Approvals (admin only) ---
+    if (approvalsCard) approvalsCard.style.display = isAdmin ? "block" : "none";
+    if (isAdmin && approvalsBody) {
+        const pending = requisitions.filter(r => r.status === "pending");
+        if (approvalsCount) approvalsCount.textContent = pending.length;
+        approvalsBody.innerHTML = "";
+        for (const r of pending) {
+            const row = approvalsBody.insertRow();
+            row.insertCell(0).textContent = r.date || "";
+            row.insertCell(1).textContent = r.drug || "";
+            row.insertCell(2).textContent = r.location || "";
+            row.insertCell(3).textContent = r.qtyRequested || 0;
+
+            const qtyCell = row.insertCell(4);
+            const qtyInput = document.createElement("input");
+            qtyInput.type = "number";
+            qtyInput.min = "1";
+            qtyInput.className = "pending-qty-input";
+            qtyInput.value = r.qtyApproved != null ? r.qtyApproved : r.qtyRequested;
+            qtyInput.id = "approveQty_" + r.id;
+            const stockItem = inventoryData.find(i => i.name.toLowerCase() === (r.drug || "").toLowerCase());
+            if (stockItem) qtyInput.title = `Available: ${stockItem.balance} ${stockItem.unit || ""}`;
+            qtyCell.appendChild(qtyInput);
+
+            row.insertCell(5).textContent = r.unit || "";
+            row.insertCell(6).textContent = r.requestedBy || "";
+            row.insertCell(7).textContent = r.notes || "";
+
+            const actionCell = row.insertCell(8);
+            const approveBtn = document.createElement("button");
+            approveBtn.className = "btn-success";
+            approveBtn.textContent = "✅ Approve";
+            approveBtn.style.marginRight = "6px";
+            approveBtn.onclick = () => approveRequisition(r.id);
+            actionCell.appendChild(approveBtn);
+
+            const rejectBtn = document.createElement("button");
+            rejectBtn.className = "btn-delete";
+            rejectBtn.textContent = "❌ Reject";
+            rejectBtn.onclick = () => rejectRequisition(r.id);
+            actionCell.appendChild(rejectBtn);
+        }
+    }
+
+    // --- History table: everyone sees their own; admins see everyone's ---
+    const visible = isAdmin ? requisitions : requisitions.filter(r => r.requestedBy === currentUserEmail);
+    const sorted = [...visible].sort((a, b) => new Date(b.date) - new Date(a.date));
+    historyBody.innerHTML = "";
+    for (const r of sorted) {
+        const row = historyBody.insertRow();
+        row.insertCell(0).textContent = r.date || "";
+        row.insertCell(1).textContent = r.drug || "";
+        row.insertCell(2).textContent = r.location || "";
+        row.insertCell(3).textContent = r.qtyRequested || 0;
+        row.insertCell(4).textContent = r.qtyApproved != null ? r.qtyApproved : "—";
+        row.insertCell(5).textContent = r.unit || "";
+        row.insertCell(6).textContent = r.requestedBy || "";
+
+        const statusCell = row.insertCell(7);
+        const badge = document.createElement("span");
+        badge.textContent = r.status === "pending" ? "⏳ Pending" : r.status === "approved" ? "✅ Approved" : "❌ Rejected";
+        badge.style.fontWeight = "600";
+        badge.style.color = r.status === "pending" ? "#b7791f" : r.status === "approved" ? "#276749" : "#c53030";
+        statusCell.appendChild(badge);
+
+        row.insertCell(8).textContent = r.reviewedBy || "";
+        row.insertCell(9).textContent = r.notes || "";
+    }
+}
+
+function approveRequisition(id) {
+    const req = requisitions.find(r => r.id === id);
+    if (!req) return;
+
+    const qtyInput = document.getElementById("approveQty_" + id);
+    const qty = parseInt(qtyInput ? qtyInput.value : req.qtyRequested) || 0;
+    if (qty <= 0) {
+        alert("Please enter a valid quantity before approving.");
+        return;
+    }
+
+    const stockItem = inventoryData.find(i => i.name.toLowerCase() === (req.drug || "").toLowerCase());
+    if (stockItem && qty > stockItem.balance) {
+        if (!confirm(`Only ${stockItem.balance} ${stockItem.unit || ""} of "${req.drug}" is available, but you're approving ${qty}. Continue anyway?`)) {
+            return;
+        }
+    }
+
+    req.qtyApproved = qty;
+    req.status = "approved";
+    req.reviewedBy = currentUserEmail;
+    req.reviewedAt = new Date().toISOString();
+
+    // Send it into the existing Issuing pending list for final processing -
+    // stock is NOT touched yet, exactly like manually adding an issuing entry.
+    pendingIssuing.push({
+        pendingId: Date.now() + Math.random(),
+        date: new Date().toISOString().slice(0, 10),
+        drug: req.drug,
+        location: req.location,
+        batch: "",
+        qty: qty,
+        unit: req.unit,
+        recipient: req.requestedBy,
+        issuedBy: currentUserEmail
+    });
+    renderPendingIssuing();
+
+    saveAll();
+    renderRequisitions();
+    alert(`✅ Approved! "${req.drug}" (qty ${qty}) has been added to the Issuing tab's pending list — go there to finish processing it.`);
+}
+
+function rejectRequisition(id) {
+    const req = requisitions.find(r => r.id === id);
+    if (!req) return;
+    if (!confirm(`Reject the request for "${req.drug}" (qty ${req.qtyRequested})?`)) return;
+
+    req.status = "rejected";
+    req.reviewedBy = currentUserEmail;
+    req.reviewedAt = new Date().toISOString();
+
+    saveAll();
+    renderRequisitions();
 }
 
 // Single source of truth for a drug's stock status so OUT OF STOCK,
@@ -10921,6 +11285,10 @@ function initSystem() {
     populateLocationDatalists();
     populateUnitDatalists();
     loadAllData();
+    renderRequisitions();
+
+    const reqDateEl = document.getElementById("reqDate");
+    if (reqDateEl && !reqDateEl.value) reqDateEl.value = new Date().toISOString().split('T')[0];
     
     // NO SAMPLE DATA - start with empty inventory
     // If no data, just save empty arrays
