@@ -1377,6 +1377,36 @@
         <!-- DASHBOARD TAB -->
         <div id="Dashboard" class="tabcontent" style="display: none;">
             <div class="search-section">
+                <h3>🔍 Search Transactions by Drug</h3>
+                <div style="display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end;">
+                    <div class="form-group">
+                        <label>Drug / Item:</label>
+                        <input type="text" id="searchDrugName" list="drugSuggestions" placeholder="Enter or pick a drug name" style="width: 280px;" oninput="searchTransactionsByDrug()">
+                    </div>
+                    <div>
+                        <button onclick="searchTransactionsByDrug()">🔍 Search</button>
+                        <button onclick="clearDrugSearch()" class="btn-outline" style="margin-left: 10px;">🗑️ Clear</button>
+                    </div>
+                </div>
+
+                <div id="receivingByDrugResult" class="result-count"></div>
+                <div class="table-wrapper">
+                    <table id="searchReceivingByDrugTable">
+                        <thead><tr><th>Date</th><th>Drug/Item</th><th>Location</th><th>Batch No.</th><th>Qty</th><th>Unit</th><th>Supplier</th><th>Expiry</th><th>Received By</th></tr></thead>
+                        <tbody id="searchReceivingByDrugBody"></tbody>
+                    </table>
+                </div>
+
+                <div id="issuingByDrugResult" class="result-count"></div>
+                <div class="table-wrapper">
+                    <table id="searchIssuingByDrugTable">
+                        <thead><tr><th>Date</th><th>Drug/Item</th><th>Location</th><th>Batch No.</th><th>Qty</th><th>Unit</th><th>Recipient</th><th>Issued By</th></tr></thead>
+                        <tbody id="searchIssuingByDrugBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="search-section">
                 <h3>🔍 Search Transactions by Date</h3>
                 <div style="display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end;">
                     <div class="form-group">
@@ -11774,11 +11804,13 @@ function updateReqAvailability() {
     if (item) {
         if (item.unit && !unitField.value) unitField.value = item.unit;
         if (item.location && !locationField.value) locationField.value = item.location;
-        // Stock quantity is admin-only info — staff only get the location,
-        // never the balance number, so they can't see how much is in stock.
+        // Stock quantity is admin-only info. Staff get no hint text at all here —
+        // the location is already visible in the Location field itself once
+        // auto-filled above, so there's nothing left to show them that doesn't
+        // also reveal (or hint at) how much stock exists.
         hint.textContent = currentUserRole === "admin"
             ? `📦 Available: ${item.balance} ${item.unit || ""} at ${item.location || "no location set"}`
-            : `📍 Location: ${item.location || "not set"}`;
+            : "";
         hint.className = "field-hint";
     } else {
         hint.textContent = "⚠️ New/unknown drug — no stock on record yet";
@@ -13415,6 +13447,74 @@ function clearInventorySearch() {
 // ============================================================
 // SEARCH FUNCTIONS (Dashboard)
 // ============================================================
+
+function searchTransactionsByDrug() {
+    const drugNameRaw = document.getElementById("searchDrugName").value.trim();
+    const recvBody = document.getElementById("searchReceivingByDrugBody");
+    const issBody = document.getElementById("searchIssuingByDrugBody");
+    if (!recvBody || !issBody) return;
+    recvBody.innerHTML = "";
+    issBody.innerHTML = "";
+
+    if (!drugNameRaw) {
+        document.getElementById("receivingByDrugResult").innerHTML = "📋 Enter or pick a drug name to search.";
+        document.getElementById("issuingByDrugResult").innerHTML = "";
+        return;
+    }
+
+    const needle = drugNameRaw.toLowerCase();
+    const matchesDrug = (r) => (r.drug || "").toLowerCase().includes(needle);
+    // Most recent first: sort by date descending, then by id (a timestamp-based
+    // number for every receiving/issuing entry) descending, so multiple entries
+    // logged on the same date still land newest-first.
+    const byRecency = (a, b) => (b.date || "").localeCompare(a.date || "") || ((b.id || 0) - (a.id || 0));
+
+    const recvMatches = receivingData.filter(matchesDrug).slice().sort(byRecency);
+    const issMatches = issuingData.filter(matchesDrug).slice().sort(byRecency);
+
+    if (recvMatches.length === 0) {
+        recvBody.innerHTML = `<tr><td colspan="9" class="empty-state">No receiving transactions found for "${escapeHtml(drugNameRaw)}"</td></tr>`;
+    } else {
+        for (const r of recvMatches) {
+            const row = recvBody.insertRow();
+            row.insertCell(0).textContent = r.date || "";
+            row.insertCell(1).textContent = r.drug || "";
+            row.insertCell(2).textContent = r.location || "";
+            row.insertCell(3).textContent = r.batch || "";
+            row.insertCell(4).textContent = r.qty || 0;
+            row.insertCell(5).textContent = r.unit || "";
+            row.insertCell(6).textContent = r.supplier || "";
+            row.insertCell(7).textContent = r.expiryDate || "";
+            row.insertCell(8).textContent = r.receivedBy || "";
+        }
+    }
+    document.getElementById("receivingByDrugResult").innerHTML = `📋 Found ${recvMatches.length} receiving transaction(s) for "${escapeHtml(drugNameRaw)}" — most recent first`;
+
+    if (issMatches.length === 0) {
+        issBody.innerHTML = `<tr><td colspan="8" class="empty-state">No issuing transactions found for "${escapeHtml(drugNameRaw)}"</td></tr>`;
+    } else {
+        for (const r of issMatches) {
+            const row = issBody.insertRow();
+            row.insertCell(0).textContent = r.date || "";
+            row.insertCell(1).textContent = r.drug || "";
+            row.insertCell(2).textContent = r.location || "";
+            row.insertCell(3).textContent = r.batch || "";
+            row.insertCell(4).textContent = r.qty || 0;
+            row.insertCell(5).textContent = r.unit || "";
+            row.insertCell(6).textContent = r.recipient || "";
+            row.insertCell(7).textContent = r.issuedBy || "";
+        }
+    }
+    document.getElementById("issuingByDrugResult").innerHTML = `📋 Found ${issMatches.length} issuing transaction(s) for "${escapeHtml(drugNameRaw)}" — most recent first`;
+}
+
+function clearDrugSearch() {
+    document.getElementById("searchDrugName").value = "";
+    document.getElementById("searchReceivingByDrugBody").innerHTML = "";
+    document.getElementById("searchIssuingByDrugBody").innerHTML = "";
+    document.getElementById("receivingByDrugResult").innerHTML = "";
+    document.getElementById("issuingByDrugResult").innerHTML = "";
+}
 
 function searchReceivingByDate() {
     const searchDate = document.getElementById("searchDate").value;
