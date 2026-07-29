@@ -222,51 +222,164 @@
             margin: 5px 0 0;
             opacity: 0.8;
         }
-        .tab {
+        /* ===== SLEEK ANIMATED SIDEBAR NAVBAR ===== */
+        .app-layout { display: flex; min-height: 100vh; }
+        .sidebar {
+            width: 260px;
+            background: linear-gradient(180deg, #1a3c5c 0%, #0f2940 100%);
+            color: white;
             display: flex;
-            background: #f8f9fa;
-            border-bottom: 1px solid #dee2e6;
-            flex-wrap: wrap;
+            flex-direction: column;
+            position: fixed;
+            top: 0; left: 0; bottom: 0;
+            z-index: 1000;
+            box-shadow: 4px 0 20px rgba(0,0,0,0.15);
+            transition: width 0.3s ease;
+            overflow-y: auto;
+            overflow-x: hidden;
         }
-        .tab button {
-            background: none;
-            border: none;
-            padding: 14px 24px;
-            font-size: 15px;
-            font-weight: 600;
+        .sidebar-header {
+            padding: 24px 20px 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        .sidebar-header h2 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            color: white;
+        }
+        .sidebar-header p {
+            margin: 4px 0 0;
+            font-size: 11px;
+            color: rgba(255,255,255,0.5);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .sidebar-nav { flex: 1; padding: 12px 0; }
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: rgba(255,255,255,0.7);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
             cursor: pointer;
-            transition: 0.2s;
-            color: #495057;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+            outline: none;
         }
-        .tab button:hover {
-            background: #e9ecef;
-            color: #1a3c5c;
+        .nav-item:hover {
+            color: white;
+            background: rgba(255,255,255,0.06);
+            padding-left: 26px;
         }
-        .tab button.active {
-            background: white;
-            color: #2c5282;
-            border-bottom: 3px solid #2c5282;
+        .nav-item.active {
+            color: white;
+            background: rgba(255,255,255,0.1);
         }
-        .tab button.setup-tab {
-            color: #d69e2e;
+        .nav-item.active::before {
+            content: '';
+            position: absolute;
+            left: 0; top: 0; bottom: 0;
+            width: 3px;
+            background: #63b3ed;
+            border-radius: 0 3px 3px 0;
+            animation: slideInBar 0.3s ease;
         }
-        .tab button.setup-tab:hover {
-            background: #fffbeb;
-            color: #b7791f;
+        @keyframes slideInBar {
+            from { transform: scaleY(0); }
+            to { transform: scaleY(1); }
         }
-        .tab button.setup-tab.active {
-            color: #b7791f;
-            border-bottom-color: #d69e2e;
-            background: #fffbeb;
+        .nav-icon {
+            font-size: 18px;
+            margin-right: 12px;
+            width: 24px;
+            text-align: center;
+            transition: transform 0.25s ease;
+        }
+        .nav-item:hover .nav-icon { transform: scale(1.15); }
+        .nav-arrow {
+            margin-left: auto;
+            font-size: 11px;
+            transition: transform 0.3s ease;
+            color: rgba(255,255,255,0.4);
+        }
+        .nav-item.expanded .nav-arrow { transform: rotate(90deg); }
+        .sub-menu {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            background: rgba(0,0,0,0.15);
+        }
+        .sub-menu.open { max-height: 400px; }
+        .sub-menu .nav-item {
+            padding: 10px 20px 10px 56px;
+            font-size: 13px;
+            font-weight: 400;
+            color: rgba(255,255,255,0.6);
+        }
+        .sub-menu .nav-item:hover {
+            color: rgba(255,255,255,0.9);
+            padding-left: 62px;
+        }
+        .sub-menu .nav-item.active::before {
+            width: 2px;
+            background: rgba(99,179,237,0.6);
+        }
+        .sidebar-footer {
+            padding: 16px 20px;
+            border-top: 1px solid rgba(255,255,255,0.08);
+            font-size: 11px;
+            color: rgba(255,255,255,0.35);
+            text-align: center;
+        }
+        .main-content {
+            flex: 1;
+            margin-left: 260px;
+            transition: margin-left 0.3s ease;
+        }
+        .mobile-toggle {
+            display: none;
+            position: fixed;
+            top: 16px; left: 16px;
+            z-index: 1001;
+            background: #1a3c5c;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 18px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); width: 280px; }
+            .sidebar.open { transform: translateX(0); }
+            .main-content { margin-left: 0; }
+            .mobile-toggle { display: block; }
+            .mobile-overlay {
+                display: none;
+                position: fixed;
+                top: 0; left: 0; right: 0; bottom: 0;
+                background: rgba(0,0,0,0.4);
+                z-index: 999;
+            }
+            .mobile-overlay.show { display: block; }
         }
         .tabcontent {
             display: none;
             padding: 25px;
-            animation: fadeIn 0.3s;
+            animation: fadeInContent 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+        @keyframes fadeInContent {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         .form-card {
             background: #f8f9fa;
@@ -1009,16 +1122,80 @@
             </div>
         </div>
 
-        <div class="tab">
-            <button class="tablinks" onclick="openTab(event, 'Receiving')" id="defaultOpen">📦 RECEIVING</button>
-            <button class="tablinks" onclick="openTab(event, 'Issuing')">📤 ISSUING</button>
-            <button class="tablinks" onclick="openTab(event, 'Requisitions')" id="requestsTabBtn">🙋 REQUESTS<span id="requestsBadge" class="badge-count" style="display:none;">0</span></button>
-            <button class="tablinks active" onclick="openTab(event, 'Inventory')">📋 INVENTORY</button>
-            <button class="tablinks" onclick="openTab(event, 'ExpiryTracker')">⏰ EXPIRY</button>
-            <button class="tablinks" onclick="openTab(event, 'Dashboard')">📊 DASHBOARD</button>
-            <button class="tablinks" onclick="openTab(event, 'Reports')">📈 REPORTS &amp; ANALYSIS</button>
-            <button class="tablinks setup-tab" onclick="openTab(event, 'Setup')">⚙️ SETUP</button>
-        </div>
+        <!-- Mobile Toggle -->
+        <button class="mobile-toggle" onclick="toggleSidebar()">☰</button>
+        <div class="mobile-overlay" id="mobileOverlay" onclick="toggleSidebar()"></div>
+
+        <!-- SLEEK ANIMATED SIDEBAR -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h2>🏥 S.A.A.L WMS</h2>
+                <p>Pharmacy Inventory</p>
+            </div>
+            <nav class="sidebar-nav">
+                <button class="nav-item" onclick="openTab('Receiving')" id="nav-Receiving">
+                    <span class="nav-icon">📦</span> Receiving
+                </button>
+                <button class="nav-item" onclick="openTab('Issuing')" id="nav-Issuing">
+                    <span class="nav-icon">📤</span> Issuing
+                </button>
+                <button class="nav-item" onclick="openTab('Requisitions')" id="nav-Requisitions">
+                    <span class="nav-icon">🙋</span> Requests
+                    <span id="requestsBadge" class="badge-count" style="display:none;">0</span>
+                </button>
+                <button class="nav-item" onclick="openTab('Inventory')" id="nav-Inventory">
+                    <span class="nav-icon">📋</span> Inventory
+                </button>
+                <button class="nav-item" onclick="openTab('ExpiryTracker')" id="nav-ExpiryTracker">
+                    <span class="nav-icon">⏰</span> Expiry
+                </button>
+
+                <!-- Dashboard with submenu -->
+                <button class="nav-item" onclick="toggleSubMenu('dashboardSub')" id="nav-Dashboard-parent">
+                    <span class="nav-icon">📊</span> Dashboard
+                    <span class="nav-arrow">▶</span>
+                </button>
+                <div class="sub-menu" id="dashboardSub">
+                    <button class="nav-item" onclick="openTab('Dashboard')" id="nav-Dashboard">
+                        <span class="nav-icon">📊</span> Overview
+                    </button>
+                    <button class="nav-item" onclick="openTab('Reports')" id="nav-Reports">
+                        <span class="nav-icon">📈</span> Reports &amp; Analysis
+                    </button>
+                </div>
+
+                <!-- Setup with submenu -->
+                <button class="nav-item" onclick="toggleSubMenu('setupSub')" id="nav-Setup-parent">
+                    <span class="nav-icon">⚙️</span> Setup
+                    <span class="nav-arrow">▶</span>
+                </button>
+                <div class="sub-menu" id="setupSub">
+                    <button class="nav-item" onclick="openTab('Setup'); setTimeout(()=>scrollToSection('manageTeamSection'), 300)" id="nav-manageTeam">
+                        <span class="nav-icon">👥</span> Manage Teams
+                    </button>
+                    <button class="nav-item" onclick="openTab('Setup'); setTimeout(()=>scrollToSection('manageListSection'), 300)" id="nav-manageList">
+                        <span class="nav-icon">📋</span> Manage Lists
+                    </button>
+                    <button class="nav-item" onclick="openTab('Setup'); setTimeout(()=>scrollToSection('manageDrugsSection'), 300)" id="nav-manageDrugs">
+                        <span class="nav-icon">💊</span> Manage Drugs
+                    </button>
+                    <button class="nav-item" onclick="showChangePassword()">
+                        <span class="nav-icon">🔑</span> Change Password
+                    </button>
+                    <button class="nav-item" onclick="openTab('Setup'); setTimeout(()=>scrollToSection('clearDataSection'), 300)" id="nav-clearData">
+                        <span class="nav-icon">🗑️</span> Clear Data
+                    </button>
+                    <button class="nav-item" onclick="logout()">
+                        <span class="nav-icon">🚪</span> Logout
+                    </button>
+                </div>
+            </nav>
+            <div class="sidebar-footer">
+                Designed &amp; Built by Godfred
+            </div>
+        </aside>
+
+        <div class="main-content">
 
         <!-- RECEIVING TAB -->
         <div id="Receiving" class="tabcontent" style="display: none;">
@@ -1372,9 +1549,7 @@
                 <button onclick="exportSnapshotHtml()" class="btn-success">💾 Save &amp; Share (for other device)</button>
                 <button onclick="document.getElementById('importFileInput').click()" class="btn-outline">📂 Load Data from File</button>
                 <input type="file" id="importFileInput" accept=".html,.htm" style="display:none" onchange="importSnapshotFile(event)">
-                <button onclick="document.getElementById('mergeFileInput').click()" class="btn-outline">🔀 Merge Data from File</button>
-                <input type="file" id="mergeFileInput" accept=".html,.htm" style="display:none" onchange="mergeSnapshotFile(event)">
-                <button onclick="refreshInventory()" class="btn-outline">🔄 Refresh</button>
+                
                 <button onclick="showAddDrugModal()" class="btn-success">➕ Add Drug</button>
                 <button onclick="openSetupTab()" class="btn-warning">⚙️ Manage Drugs</button>
                 <button onclick="openClearInventoryModal()" class="btn-clear-all">🗑️ Clear Inventory Data</button>
@@ -1442,7 +1617,6 @@
                         <option value="no-date">No Expiry Date</option>
                     </select>
                 </div>
-                <button onclick="refreshExpiryTracker()" class="btn-outline">🔄 Refresh</button>
                 <button onclick="exportExpiryReport()" style="margin-left: 10px;">📎 Export Report</button>
             </div>
             <div class="table-wrapper">
@@ -11462,47 +11636,7 @@ function importSnapshotFile(event) {
 // Drugs are matched by name+location so nothing gets duplicated; matches keep
 // the higher figures instead of blindly overwriting. Receiving/issuing rows
 // and location/supplier/etc. suggestion lists are merged the same way.
-function mergeSnapshotFile(event) {
-    const file = event.target.files && event.target.files[0];
-    event.target.value = '';
-    if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        try {
-            const text = e.target.result;
-            const match = text.match(/<script[^>]*id=["']embeddedDataStore["'][^>]*>([\s\S]*?)<\/script>/i);
-            const raw = match ? match[1].trim() : text.trim();
-
-            if (!raw || raw === '{}') {
-                alert('⚠️ No saved data found in that file.');
-                return;
-            }
-
-            const snapshot = JSON.parse(raw);
-            const itemCount = (snapshot.inventoryData && snapshot.inventoryData.length) || 0;
-            const savedLabel = snapshot.savedAt ? ', saved ' + new Date(snapshot.savedAt).toLocaleString() : '';
-            const proceed = confirm(`Found ${itemCount} drug record(s) in that file${savedLabel}.\n\nMerge this into the currently loaded data? Duplicates will be skipped/updated — nothing currently loaded will be deleted.`);
-            if (!proceed) return;
-
-            const summary = mergeSnapshotData(snapshot);
-            saveAll();
-            renderAll();
-            alert(
-                `✅ Merge complete!\n\n` +
-                `➕ ${summary.addedDrugs} new drug(s) added\n` +
-                `🔄 ${summary.updatedDrugs} existing drug(s) updated (higher figures kept)\n` +
-                `📥 ${summary.addedReceiving} receiving record(s) added\n` +
-                `📤 ${summary.addedIssuing} issuing record(s) added\n` +
-                `🔄 ${summary.addedReturns} returned goods record(s) added\n` +
-                `🗂️ ${summary.addedListValues} suggestion-list value(s) added (locations/suppliers/etc.)`
-            );
-        } catch (err) {
-            alert('❌ Could not read that file: ' + err.message);
-        }
-    };
-    reader.readAsText(file);
-}
 
 // Does the actual merging described above and returns counts for the summary
 // alert. Kept separate from mergeSnapshotFile() so it's easy to test/reuse.
@@ -12729,8 +12863,7 @@ function renderAll() {
     displayReceiving();
     displayIssuing();
     displayReturns();
-    refreshInventory();
-    refreshExpiryTracker();
+        refreshExpiryTracker();
     updateDashboardStats();
     refreshSetup();
     updateDrugSuggestions();
@@ -13031,8 +13164,7 @@ function processAllReceiving() {
     saveAll();
     renderPendingReceiving();
     displayReceiving();
-    refreshInventory();
-    refreshExpiryTracker();
+        refreshExpiryTracker();
     updateDashboardStats();
     alert(`✅ ${count} receiving entr${count === 1 ? 'y' : 'ies'} processed! Inventory updated.`);
 }
@@ -13275,8 +13407,7 @@ function processAllReturns() {
     saveAll();
     renderPendingReturns();
     displayReturns();
-    refreshInventory();
-    refreshExpiryTracker();
+        refreshExpiryTracker();
     updateDashboardStats();
     alert(`✅ ${count} return entr${count === 1 ? 'y' : 'ies'} processed! Inventory updated.`);
 }
@@ -13562,8 +13693,7 @@ function processAllIssuing() {
     saveAll();
     renderPendingIssuing();
     displayIssuing();
-    refreshInventory();
-    refreshExpiryTracker();
+        refreshExpiryTracker();
     updateDashboardStats();
 
     if (failures.length === 0) {
@@ -13595,8 +13725,7 @@ function sortInventory(key) {
         return 0;
     });
     
-    refreshInventory();
-    document.querySelectorAll('#inventoryTable th .sort-indicator').forEach(el => el.textContent = '↕');
+        document.querySelectorAll('#inventoryTable th .sort-indicator').forEach(el => el.textContent = '↕');
     const ths = document.querySelectorAll('#inventoryTable th');
     const indexMap = { id: 0, name: 1, location: 2, balance: 7, expiryDate: 10 };
     if(indexMap[key] !== undefined) {
@@ -13673,69 +13802,7 @@ function displayIssuing() {
     }
 }
 
-function refreshInventory() {
-    var tbody = document.getElementById("inventoryBody");
-    if (!tbody) return;
-    tbody.innerHTML = "";
-    let totalUnits = 0, outOfStock = 0, lowStock = 0, expiringSoon = 0, expired = 0;
-    
-    if(inventoryData.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="12" class="empty-state"><span class="icon">📭</span>No drugs in inventory. Add your first drug!</td></tr>`;
-        document.getElementById("totalItems").textContent = "0";
-        document.getElementById("outOfStockCount").textContent = "0";
-        document.getElementById("lowStockCount").textContent = "0";
-        document.getElementById("expiringSoonCount").textContent = "0";
-        document.getElementById("expiredCount").textContent = "0";
-        document.getElementById("totalUnits").textContent = "0";
-        // Clear search results
-        document.getElementById('searchResultCount').textContent = '';
-        return;
-    }
-    
-    for(let item of inventoryData) {
-        totalUnits += item.balance;
-        if(item.balance <= 0) outOfStock++;
-        else if(item.balance <= item.reorder) lowStock++;
-        const expiryInfo = getExpiryStatus(item.expiryDate);
-        if(expiryInfo.status === "EXPIRED") expired++;
-        if(expiryInfo.status === "Expiring Soon") expiringSoon++;
-        
-        const row = tbody.insertRow();
-        row.insertCell(0).textContent = item.id;
-        row.insertCell(1).textContent = item.name;
-        row.insertCell(2).textContent = item.location || "";
-        row.insertCell(3).textContent = item.unit || "";
-        row.insertCell(4).textContent = item.opening;
-        row.insertCell(5).textContent = item.received;
-        row.insertCell(6).textContent = item.issued;
-        row.insertCell(7).innerHTML = `<strong>${item.balance}</strong>`;
-        row.insertCell(8).textContent = item.reorder;
-        const statusCell = row.insertCell(9);
-        const status = computeStockStatus(item.balance, item.reorder);
-        if (status === "OUT OF STOCK") {
-            statusCell.innerHTML = '<span class="badge badge-outofstock">🚫 OUT OF STOCK</span>';
-        } else if (status === "REORDER") {
-            statusCell.innerHTML = '<span class="badge badge-reorder">⚠️ REORDER</span>';
-        } else {
-            statusCell.innerHTML = '<span class="badge badge-ok">✓ OK</span>';
-        }
-        row.insertCell(10).textContent = item.expiryDate || "Not set";
-        const expiryStatusCell = row.insertCell(11);
-        expiryStatusCell.innerHTML = `<span class="badge ${expiryInfo.class}">${expiryInfo.status}</span>`;
-        if(expiryInfo.status === "EXPIRED") row.classList.add("expired-row");
-        else if(expiryInfo.status === "Expiring Soon") row.classList.add("expiring-soon-row");
-    }
-    
-    document.getElementById("totalItems").textContent = inventoryData.length;
-    document.getElementById("outOfStockCount").textContent = outOfStock;
-    document.getElementById("lowStockCount").textContent = lowStock;
-    document.getElementById("expiringSoonCount").textContent = expiringSoon;
-    document.getElementById("expiredCount").textContent = expired;
-    document.getElementById("totalUnits").textContent = totalUnits.toLocaleString();
-    
-    // Re-apply search after refresh
-    searchInventory();
-}
+
 
 function refreshExpiryTracker() {
     var tbody = document.getElementById("expiryBody");
@@ -14290,8 +14357,7 @@ function saveEditItem(id) {
     saveAll();
     editingItemId = null;
     renderSetupItems();
-    refreshInventory();
-    refreshExpiryTracker();
+        refreshExpiryTracker();
     updateDashboardStats();
     updateDrugSuggestions();
     alert(`✅ Drug "${newName}" updated successfully!`);
@@ -14322,8 +14388,7 @@ function deleteItem(id) {
                 editingItemId = null;
             }
             renderSetupItems();
-            refreshInventory();
-            refreshExpiryTracker();
+                        refreshExpiryTracker();
             updateDashboardStats();
             updateDrugSuggestions();
             alert(`🗑️ "${deletedItem.name}" has been permanently deleted.`);
@@ -14398,8 +14463,7 @@ function addDrugManually() {
     rememberUnitIfNew(unit);
     saveAll();
     closeAddDrugModal();
-    refreshInventory();
-    refreshExpiryTracker();
+        refreshExpiryTracker();
     updateDashboardStats();
     renderSetupItems();
     updateDrugSuggestions();
@@ -14976,7 +15040,29 @@ function renderAbcKpis() {
         <div class="stat-card accent-green"><h4>Class A (top 80% volume)</h4><div class="number">${aCount}</div></div>
         <div class="stat-card accent-blue"><h4>Class B (next 15%)</h4><div class="number">${bCount}</div></div>
         <div class="stat-card accent-orange"><h4>Class C (last 5%)</h4><div class="number">${cCount}</div></div>
-        <div class="stat-card"><h4>Never Issued</h4><div class="number">${naCount}</div></div>
+        <div class="stat-card"><h4>Never Issued</h4><div class="number">${naCount}</div>
+            <!-- CLEAR DATA SECTION -->
+            <div class="form-card" id="clearDataSection" style="border: 1px solid #fc8181; background: #fff5f5; margin-top: 30px;">
+                <h3 style="color: #c53030;">🗑️ Clear Data</h3>
+                <p style="color: #718096; font-size: 13px; margin-bottom: 15px;">
+                    Permanently delete transaction records. This action <strong>cannot be undone</strong>.
+                </p>
+                <div class="flex-btns">
+                    <button onclick="clearReceivingHistory()" class="btn-outline" style="border-color: #c53030; color: #c53030;">
+                        🗑️ Clear Receiving History
+                    </button>
+                    <button onclick="clearIssuingHistory()" class="btn-outline" style="border-color: #c53030; color: #c53030;">
+                        🗑️ Clear Issuing History
+                    </button>
+                    <button onclick="clearReturnsHistory()" class="btn-outline" style="border-color: #c53030; color: #c53030;">
+                        🗑️ Clear Returns History
+                    </button>
+                    <button onclick="clearAllHistories()" class="btn-clear-all" style="background: #742a2a;">
+                        ☠️ Clear ALL Histories
+                    </button>
+                </div>
+            </div>
+</div>
     `;
 }
 
@@ -15159,18 +15245,42 @@ function exportForecastCSV() {
     );
 }
 
-function openTab(evt, tabName) {
+function openTab(tabName) {
     const contents = document.getElementsByClassName("tabcontent");
     for(let c of contents) c.style.display = "none";
-    const links = document.getElementsByClassName("tablinks");
-    for(let l of links) l.className = l.className.replace(" active", "");
+    const navItems = document.querySelectorAll('.nav-item');
+    for(let n of navItems) n.classList.remove('active');
     document.getElementById(tabName).style.display = "block";
-    evt.currentTarget.className += " active";
-    if(tabName === "Inventory") refreshInventory();
+    var activeNav = document.getElementById('nav-' + tabName);
+    if(activeNav) activeNav.classList.add('active');
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('mobileOverlay').classList.remove('show');
     if(tabName === "ExpiryTracker") refreshExpiryTracker();
     if(tabName === "Dashboard") updateDashboardStats();
     if(tabName === "Setup") renderSetupItems();
     if(tabName === "Reports") refreshReports();
+}
+
+function toggleSubMenu(menuId) {
+    var menu = document.getElementById(menuId);
+    var parent = document.querySelector('[onclick="toggleSubMenu('' + menuId + '')"]');
+    if(menu.classList.contains('open')) {
+        menu.classList.remove('open');
+        if(parent) parent.classList.remove('expanded');
+    } else {
+        menu.classList.add('open');
+        if(parent) parent.classList.add('expanded');
+    }
+}
+
+function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('open');
+    document.getElementById('mobileOverlay').classList.toggle('show');
+}
+
+function scrollToSection(sectionId) {
+    var el = document.getElementById(sectionId);
+    if(el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 // Close modal on outside click
@@ -15199,6 +15309,51 @@ console.log("✅ Pharmacy Inventory System loaded!");
 console.log("📍 Location dropdown with type-ahead support");
 console.log("🔍 Search feature in Inventory tab");
 console.log("📦 No sample data - start with empty inventory");
+
+        </div> <!-- /.main-content -->
+
+/* ========== CLEAR DATA FUNCTIONS ========== */
+function clearReceivingHistory() {
+    if (!confirm('⚠️ Are you sure you want to permanently delete ALL receiving transaction records?\n\nThis cannot be undone.')) return;
+    if (!confirm('🔴 FINAL WARNING: This will erase all receiving history forever. Proceed?')) return;
+    receivingHistory = [];
+    localStorage.setItem('receivingHistory', JSON.stringify(receivingHistory));
+    renderReceivingTable();
+    showToast('✅ Receiving history cleared permanently', 'success');
+}
+
+function clearIssuingHistory() {
+    if (!confirm('⚠️ Are you sure you want to permanently delete ALL issuing transaction records?\n\nThis cannot be undone.')) return;
+    if (!confirm('🔴 FINAL WARNING: This will erase all issuing history forever. Proceed?')) return;
+    issuingHistory = [];
+    localStorage.setItem('issuingHistory', JSON.stringify(issuingHistory));
+    renderIssuingTable();
+    showToast('✅ Issuing history cleared permanently', 'success');
+}
+
+function clearReturnsHistory() {
+    if (!confirm('⚠️ Are you sure you want to permanently delete ALL returned goods records?\n\nThis cannot be undone.')) return;
+    if (!confirm('🔴 FINAL WARNING: This will erase all returns history forever. Proceed?')) return;
+    returnsHistory = [];
+    localStorage.setItem('returnsHistory', JSON.stringify(returnsHistory));
+    renderReturnsTable();
+    showToast('✅ Returns history cleared permanently', 'success');
+}
+
+function clearAllHistories() {
+    if (!confirm('☠️ DANGER: You are about to delete ALL transaction histories (Receiving, Issuing, AND Returns).\n\nThis cannot be undone.')) return;
+    if (!confirm('🔴 FINAL WARNING: ALL history will be wiped. Are you absolutely sure?')) return;
+    receivingHistory = [];
+    issuingHistory = [];
+    returnsHistory = [];
+    localStorage.setItem('receivingHistory', JSON.stringify(receivingHistory));
+    localStorage.setItem('issuingHistory', JSON.stringify(issuingHistory));
+    localStorage.setItem('returnsHistory', JSON.stringify(returnsHistory));
+    renderReceivingTable();
+    renderIssuingTable();
+    renderReturnsTable();
+    showToast('☠️ All transaction histories cleared permanently', 'success');
+}
 </script>
 
 </body></html>
