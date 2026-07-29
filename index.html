@@ -222,164 +222,168 @@
             margin: 5px 0 0;
             opacity: 0.8;
         }
-        /* ===== SLEEK ANIMATED SIDEBAR NAVBAR ===== */
-        .app-layout { display: flex; min-height: 100vh; }
-        .sidebar {
-            width: 260px;
-            background: linear-gradient(180deg, #1a3c5c 0%, #0f2940 100%);
-            color: white;
-            display: flex;
-            flex-direction: column;
-            position: fixed;
-            top: 0; left: 0; bottom: 0;
-            z-index: 1000;
-            box-shadow: 4px 0 20px rgba(0,0,0,0.15);
-            transition: width 0.3s ease;
-            overflow-y: auto;
-            overflow-x: hidden;
-        }
-        .sidebar-header {
-            padding: 24px 20px 16px;
-            border-bottom: 1px solid rgba(255,255,255,0.08);
-        }
-        .sidebar-header h2 {
-            margin: 0;
-            font-size: 18px;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-            color: white;
-        }
-        .sidebar-header p {
-            margin: 4px 0 0;
-            font-size: 11px;
-            color: rgba(255,255,255,0.5);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        .sidebar-nav { flex: 1; padding: 12px 0; }
-        .nav-item {
+        /* ============================================================
+           SLEEK ANIMATED NAVBAR
+           ============================================================ */
+        .navbar {
             display: flex;
             align-items: center;
-            padding: 12px 20px;
-            color: rgba(255,255,255,0.7);
-            text-decoration: none;
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            gap: 4px;
+            background: linear-gradient(135deg, #16324f, #2c5282);
+            padding: 10px 14px;
+            flex-wrap: wrap;
             position: relative;
-            border: none;
+            z-index: 50;
+        }
+        .nav-item { position: relative; }
+        .nav-link-wrap {
+            display: flex;
+            align-items: stretch;
+            border-radius: 10px;
+            overflow: hidden;
+            transition: background 0.25s ease;
+        }
+        .nav-link-wrap:hover { background: rgba(255,255,255,0.08); }
+        .nav-link {
             background: none;
-            width: 100%;
-            text-align: left;
-            outline: none;
+            border: none;
+            padding: 13px 16px;
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 0.2px;
+            cursor: pointer;
+            color: rgba(255,255,255,0.85);
+            position: relative;
+            transition: color 0.25s ease;
+            white-space: nowrap;
         }
-        .nav-item:hover {
-            color: white;
-            background: rgba(255,255,255,0.06);
-            padding-left: 26px;
-        }
-        .nav-item.active {
-            color: white;
-            background: rgba(255,255,255,0.1);
-        }
-        .nav-item.active::before {
-            content: '';
+        .nav-link::after {
+            content: "";
             position: absolute;
-            left: 0; top: 0; bottom: 0;
-            width: 3px;
-            background: #63b3ed;
-            border-radius: 0 3px 3px 0;
-            animation: slideInBar 0.3s ease;
-        }
-        @keyframes slideInBar {
-            from { transform: scaleY(0); }
-            to { transform: scaleY(1); }
-        }
-        .nav-icon {
-            font-size: 18px;
-            margin-right: 12px;
-            width: 24px;
-            text-align: center;
+            left: 14px;
+            right: 14px;
+            bottom: 7px;
+            height: 2px;
+            background: #fff;
+            border-radius: 2px;
+            transform: scaleX(0);
+            transform-origin: center;
             transition: transform 0.25s ease;
         }
-        .nav-item:hover .nav-icon { transform: scale(1.15); }
-        .nav-arrow {
+        .nav-link:hover { color: #fff; }
+        .nav-link.active { color: #fff; }
+        .nav-link.active::after { transform: scaleX(1); }
+        .nav-link.setup-tab { color: #f6c453; }
+        .nav-link.setup-tab:hover, .nav-link.setup-tab.active { color: #ffd876; }
+        .nav-link.setup-tab.active::after { background: #ffd876; }
+        .nav-caret-btn {
+            background: none;
+            border: none;
+            border-left: 1px solid rgba(255,255,255,0.15);
+            color: rgba(255,255,255,0.65);
+            cursor: pointer;
+            padding: 0 12px;
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            transition: transform 0.25s ease, color 0.2s ease;
+        }
+        .nav-caret-btn:hover { color: #fff; }
+        .nav-caret-btn.open { transform: rotate(180deg); color: #fff; }
+        .nav-dropdown {
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 0;
+            min-width: 240px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 16px 40px rgba(0,0,0,0.24);
+            padding: 8px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-8px);
+            transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
+            z-index: 60;
+        }
+        .nav-dropdown.open {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        .nav-dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+            background: none;
+            border: none;
+            text-align: left;
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #2d3748;
+            cursor: pointer;
+            transition: background 0.15s ease, color 0.15s ease, padding-left 0.15s ease;
+        }
+        .nav-dropdown-item:hover {
+            background: #f0f5fb;
+            color: #1a3c5c;
+            padding-left: 16px;
+        }
+        .nav-dropdown-item.active {
+            background: #ebf8ff;
+            color: #2c5282;
+        }
+        .nav-dropdown-item.danger { color: #c53030; }
+        .nav-dropdown-item.danger:hover { background: #fff5f5; color: #9b2c2c; }
+        .nav-dropdown-divider {
+            height: 1px;
+            background: #e2e8f0;
+            margin: 6px 4px;
+        }
+        .nav-dropdown-item-wrap { position: relative; }
+        .nav-flyout-caret {
             margin-left: auto;
             font-size: 11px;
-            transition: transform 0.3s ease;
-            color: rgba(255,255,255,0.4);
+            color: #a0aec0;
+            transition: transform 0.2s ease;
         }
-        .nav-item.expanded .nav-arrow { transform: rotate(90deg); }
-        .sub-menu {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-            background: rgba(0,0,0,0.15);
+        .nav-flyout-trigger.open .nav-flyout-caret { transform: rotate(90deg); color: #2c5282; }
+        .nav-flyout {
+            position: absolute;
+            left: calc(100% + 6px);
+            top: 0;
+            min-width: 220px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 16px 40px rgba(0,0,0,0.24);
+            padding: 8px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateX(-8px);
+            transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
+            z-index: 70;
         }
-        .sub-menu.open { max-height: 400px; }
-        .sub-menu .nav-item {
-            padding: 10px 20px 10px 56px;
-            font-size: 13px;
-            font-weight: 400;
-            color: rgba(255,255,255,0.6);
+        .nav-flyout.open {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(0);
         }
-        .sub-menu .nav-item:hover {
-            color: rgba(255,255,255,0.9);
-            padding-left: 62px;
-        }
-        .sub-menu .nav-item.active::before {
-            width: 2px;
-            background: rgba(99,179,237,0.6);
-        }
-        .sidebar-footer {
-            padding: 16px 20px;
-            border-top: 1px solid rgba(255,255,255,0.08);
-            font-size: 11px;
-            color: rgba(255,255,255,0.35);
-            text-align: center;
-        }
-        .main-content {
-            flex: 1;
-            margin-left: 260px;
-            transition: margin-left 0.3s ease;
-        }
-        .mobile-toggle {
-            display: none;
-            position: fixed;
-            top: 16px; left: 16px;
-            z-index: 1001;
-            background: #1a3c5c;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            padding: 10px 14px;
-            font-size: 18px;
-            cursor: pointer;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-        }
-        @media (max-width: 768px) {
-            .sidebar { transform: translateX(-100%); width: 280px; }
-            .sidebar.open { transform: translateX(0); }
-            .main-content { margin-left: 0; }
-            .mobile-toggle { display: block; }
-            .mobile-overlay {
-                display: none;
-                position: fixed;
-                top: 0; left: 0; right: 0; bottom: 0;
-                background: rgba(0,0,0,0.4);
-                z-index: 999;
-            }
-            .mobile-overlay.show { display: block; }
+        .nav-dropdown.align-right { left: auto; right: 0; }
+        @media (max-width: 900px) {
+            .navbar { gap: 2px; padding: 8px; }
+            .nav-link { padding: 10px 12px; font-size: 13px; }
+            .nav-flyout { left: 0; top: calc(100% + 6px); }
         }
         .tabcontent {
             display: none;
             padding: 25px;
-            animation: fadeInContent 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            animation: fadeIn 0.3s;
         }
-        @keyframes fadeInContent {
-            from { opacity: 0; transform: translateY(8px); }
-            to { opacity: 1; transform: translateY(0); }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
         .form-card {
             background: #f8f9fa;
@@ -1116,86 +1120,58 @@
             </div>
             <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
                 <span style="color:white; font-weight:600;" id="loggedUser">👤 addaikwaku111@gmail.com</span>
-                <button onclick="showManageTeam()" id="manageTeamBtn" style="display: none; background: rgba(255, 255, 255, 0.2); color: white; border: 1px solid rgba(255, 255, 255, 0.3); padding: 8px 16px; border-radius: 8px; cursor: pointer;">👥 Manage Team</button>
-                <button onclick="showChangePassword()" style="background:rgba(255,255,255,0.2); color:white; border:1px solid rgba(255,255,255,0.3); padding:8px 16px; border-radius:8px; cursor:pointer;">🔑 Change Password</button>
-                <button onclick="logout()" style="background:#c53030; color:white; border:none; padding:8px 16px; border-radius:8px; cursor:pointer;">🚪 Logout</button>
             </div>
         </div>
 
-        <!-- Mobile Toggle -->
-        <button class="mobile-toggle" onclick="toggleSidebar()">☰</button>
-        <div class="mobile-overlay" id="mobileOverlay" onclick="toggleSidebar()"></div>
-
-        <!-- SLEEK ANIMATED SIDEBAR -->
-        <aside class="sidebar" id="sidebar">
-            <div class="sidebar-header">
-                <h2>🏥 S.A.A.L WMS</h2>
-                <p>Pharmacy Inventory</p>
-            </div>
-            <nav class="sidebar-nav">
-                <button class="nav-item" onclick="openTab('Receiving')" id="nav-Receiving">
-                    <span class="nav-icon">📦</span> Receiving
-                </button>
-                <button class="nav-item" onclick="openTab('Issuing')" id="nav-Issuing">
-                    <span class="nav-icon">📤</span> Issuing
-                </button>
-                <button class="nav-item" onclick="openTab('Requisitions')" id="nav-Requisitions">
-                    <span class="nav-icon">🙋</span> Requests
-                    <span id="requestsBadge" class="badge-count" style="display:none;">0</span>
-                </button>
-                <button class="nav-item" onclick="openTab('Inventory')" id="nav-Inventory">
-                    <span class="nav-icon">📋</span> Inventory
-                </button>
-                <button class="nav-item" onclick="openTab('ExpiryTracker')" id="nav-ExpiryTracker">
-                    <span class="nav-icon">⏰</span> Expiry
-                </button>
-
-                <!-- Dashboard with submenu -->
-                <button class="nav-item" onclick="toggleSubMenu('dashboardSub')" id="nav-Dashboard-parent">
-                    <span class="nav-icon">📊</span> Dashboard
-                    <span class="nav-arrow">▶</span>
-                </button>
-                <div class="sub-menu" id="dashboardSub">
-                    <button class="nav-item" onclick="openTab('Dashboard')" id="nav-Dashboard">
-                        <span class="nav-icon">📊</span> Overview
-                    </button>
-                    <button class="nav-item" onclick="openTab('Reports')" id="nav-Reports">
-                        <span class="nav-icon">📈</span> Reports &amp; Analysis
-                    </button>
+        <nav class="navbar" id="mainNavbar">
+            <div class="nav-item">
+                <div class="nav-link-wrap">
+                    <button class="nav-link tablinks" onclick="openTab(event, 'Dashboard')" id="navDashboardBtn">📊 Dashboard</button>
+                    <button class="nav-caret-btn" onclick="toggleDropdown(event, 'dashboardDropdown')" aria-label="Toggle Dashboard menu">▾</button>
                 </div>
-
-                <!-- Setup with submenu -->
-                <button class="nav-item" onclick="toggleSubMenu('setupSub')" id="nav-Setup-parent">
-                    <span class="nav-icon">⚙️</span> Setup
-                    <span class="nav-arrow">▶</span>
-                </button>
-                <div class="sub-menu" id="setupSub">
-                    <button class="nav-item" onclick="openTab('Setup'); setTimeout(()=>scrollToSection('manageTeamSection'), 300)" id="nav-manageTeam">
-                        <span class="nav-icon">👥</span> Manage Teams
-                    </button>
-                    <button class="nav-item" onclick="openTab('Setup'); setTimeout(()=>scrollToSection('manageListSection'), 300)" id="nav-manageList">
-                        <span class="nav-icon">📋</span> Manage Lists
-                    </button>
-                    <button class="nav-item" onclick="openTab('Setup'); setTimeout(()=>scrollToSection('manageDrugsSection'), 300)" id="nav-manageDrugs">
-                        <span class="nav-icon">💊</span> Manage Drugs
-                    </button>
-                    <button class="nav-item" onclick="showChangePassword()">
-                        <span class="nav-icon">🔑</span> Change Password
-                    </button>
-                    <button class="nav-item" onclick="openTab('Setup'); setTimeout(()=>scrollToSection('clearDataSection'), 300)" id="nav-clearData">
-                        <span class="nav-icon">🗑️</span> Clear Data
-                    </button>
-                    <button class="nav-item" onclick="logout()">
-                        <span class="nav-icon">🚪</span> Logout
-                    </button>
+                <div class="nav-dropdown" id="dashboardDropdown">
+                    <button class="nav-dropdown-item tablinks" onclick="openTab(event, 'Reports')">📈 Reports &amp; Analysis</button>
+                    <button class="nav-dropdown-item tablinks" onclick="openTab(event, 'ExpiryTracker')">⏰ Expiry</button>
                 </div>
-            </nav>
-            <div class="sidebar-footer">
-                Designed &amp; Built by Godfred
             </div>
-        </aside>
 
-        <div class="main-content">
+            <div class="nav-item">
+                <button class="nav-link tablinks" onclick="openTab(event, 'Receiving')" id="defaultOpen">📦 Receiving</button>
+            </div>
+            <div class="nav-item">
+                <button class="nav-link tablinks" onclick="openTab(event, 'Issuing')">📤 Issuing</button>
+            </div>
+            <div class="nav-item">
+                <button class="nav-link tablinks" onclick="openTab(event, 'Requisitions')" id="requestsTabBtn">🙋 Requests<span id="requestsBadge" class="badge-count" style="display:none;">0</span></button>
+            </div>
+            <div class="nav-item">
+                <button class="nav-link tablinks" onclick="openTab(event, 'Inventory')">📋 Inventory</button>
+            </div>
+
+            <div class="nav-item">
+                <div class="nav-link-wrap">
+                    <button class="nav-link tablinks setup-tab" onclick="openTab(event, 'Setup')" id="navSetupBtn">⚙️ Setup</button>
+                    <button class="nav-caret-btn" onclick="toggleDropdown(event, 'setupDropdown')" aria-label="Toggle Setup menu">▾</button>
+                </div>
+                <div class="nav-dropdown align-right" id="setupDropdown">
+                    <button class="nav-dropdown-item" id="navManageTeamItem" style="display:none;" onclick="showManageTeam()">👥 Manage Teams</button>
+                    <button class="nav-dropdown-item tablinks" onclick="openSetupSection(event, 'manageListsSection')">🗂️ Manage List</button>
+                    <button class="nav-dropdown-item tablinks" onclick="openSetupSection(event, 'manageDrugsSection')">💊 Manage Drugs</button>
+                    <button class="nav-dropdown-item" onclick="showChangePassword()">🔑 Change Password</button>
+                    <div class="nav-dropdown-item-wrap">
+                        <button class="nav-dropdown-item nav-flyout-trigger" onclick="toggleFlyout(event, 'clearDataFlyout')">🧹 Clear Data <span class="nav-flyout-caret">▸</span></button>
+                        <div class="nav-flyout" id="clearDataFlyout">
+                            <button class="nav-dropdown-item" onclick="clearIssuingHistory()">📤 Clear Issuing History</button>
+                            <button class="nav-dropdown-item" onclick="clearReceivingHistory()">📦 Clear Receiving History</button>
+                            <button class="nav-dropdown-item" onclick="clearReturnsHistory()">🔄 Clear Returns History</button>
+                            <button class="nav-dropdown-item danger" onclick="clearAllHistories()">🗑️ Clear All Histories</button>
+                        </div>
+                    </div>
+                    <div class="nav-dropdown-divider"></div>
+                    <button class="nav-dropdown-item danger" onclick="logout()">🚪 Logout</button>
+                </div>
+            </div>
+        </nav>
 
         <!-- RECEIVING TAB -->
         <div id="Receiving" class="tabcontent" style="display: none;">
@@ -1549,7 +1525,6 @@
                 <button onclick="exportSnapshotHtml()" class="btn-success">💾 Save &amp; Share (for other device)</button>
                 <button onclick="document.getElementById('importFileInput').click()" class="btn-outline">📂 Load Data from File</button>
                 <input type="file" id="importFileInput" accept=".html,.htm" style="display:none" onchange="importSnapshotFile(event)">
-                
                 <button onclick="showAddDrugModal()" class="btn-success">➕ Add Drug</button>
                 <button onclick="openSetupTab()" class="btn-warning">⚙️ Manage Drugs</button>
                 <button onclick="openClearInventoryModal()" class="btn-clear-all">🗑️ Clear Inventory Data</button>
@@ -1951,7 +1926,6 @@
                 <h2>⚙️ Drug Management Setup</h2>
                 <div style="display:flex; gap:10px; flex-wrap:wrap;">
                     <button onclick="showAddDrugModal()" class="btn-success">➕ Add New Drug</button>
-                    <button onclick="refreshSetup()" class="btn-outline">🔄 Refresh</button>
                     <button onclick="openClearInventoryModal()" class="btn-clear-all">🗑️ Clear Inventory Data</button>
                 </div>
             </div>
@@ -1961,7 +1935,7 @@
                 <br>✅ All changes are saved automatically and persist after refresh.
             </div>
 
-            <div class="form-card" style="margin-bottom:20px;">
+            <div class="form-card" id="manageListsSection" style="margin-bottom:20px;">
                 <h3>🗂️ Manage Lists</h3>
                 <p class="sub" style="color:#718096; font-size:14px; margin-top:-8px;">Add or remove the names that show up as suggestions in the Receiving and Issuing forms.</p>
                 <div class="list-manager-grid">
@@ -2480,7 +2454,7 @@
                 </div>
             </div>
 
-            <div class="setup-search">
+            <div class="setup-search" id="manageDrugsSection">
                 <input type="text" id="setupSearch" placeholder="🔍 Search drugs by name, location, or ID..." onkeyup="filterSetupItems()">
             </div>
 
@@ -11631,92 +11605,6 @@ function importSnapshotFile(event) {
     reader.readAsText(file);
 }
 
-// Lets someone pick a second Gaki HTML file (e.g. from another device) and
-// FOLD its data into what's currently loaded here, instead of replacing it.
-// Drugs are matched by name+location so nothing gets duplicated; matches keep
-// the higher figures instead of blindly overwriting. Receiving/issuing rows
-// and location/supplier/etc. suggestion lists are merged the same way.
-
-
-// Does the actual merging described above and returns counts for the summary
-// alert. Kept separate from mergeSnapshotFile() so it's easy to test/reuse.
-function mergeSnapshotData(snapshot) {
-    let addedDrugs = 0, updatedDrugs = 0, addedReceiving = 0, addedIssuing = 0, addedReturns = 0, addedListValues = 0;
-
-    if (Array.isArray(snapshot.inventoryData)) {
-        for (const incoming of snapshot.inventoryData) {
-            if (!incoming || !incoming.name) continue;
-            const existing = inventoryData.find(i =>
-                i.name.toLowerCase() === incoming.name.toLowerCase() &&
-                (i.location || '').toLowerCase() === (incoming.location || '').toLowerCase()
-            );
-            if (existing) {
-                // Keep the larger figures instead of overwriting, so merging can't
-                // accidentally erase stock that only exists on this device.
-                existing.opening = Math.max(existing.opening || 0, incoming.opening || 0);
-                existing.received = Math.max(existing.received || 0, incoming.received || 0);
-                existing.issued = Math.max(existing.issued || 0, incoming.issued || 0);
-                existing.balance = Math.max(existing.balance || 0, incoming.balance || 0);
-                if (!existing.unit && incoming.unit) existing.unit = incoming.unit;
-                if (!existing.expiryDate && incoming.expiryDate) existing.expiryDate = incoming.expiryDate;
-                if (!existing.reorder) existing.reorder = incoming.reorder || existing.reorder;
-                existing.status = computeStockStatus(existing.balance, existing.reorder);
-                updatedDrugs++;
-            } else {
-                const usedIds = new Set(inventoryData.map(i => i.id));
-                inventoryData.push({
-                    ...incoming,
-                    id: (incoming.id && !usedIds.has(incoming.id)) ? incoming.id : generateId()
-                });
-                addedDrugs++;
-            }
-        }
-    }
-
-    if (Array.isArray(snapshot.receivingData)) {
-        for (const r of snapshot.receivingData) {
-            const dup = receivingData.some(x => x.date === r.date && x.drug === r.drug && x.qty === r.qty && x.location === r.location);
-            if (!dup) { receivingData.push({ ...r, id: Date.now() + Math.random() }); addedReceiving++; }
-        }
-        receivingData.sort((a, b) => new Date(b.date) - new Date(a.date));
-    }
-
-    if (Array.isArray(snapshot.issuingData)) {
-        for (const r of snapshot.issuingData) {
-            const dup = issuingData.some(x => x.date === r.date && x.drug === r.drug && x.qty === r.qty && x.location === r.location);
-            if (!dup) { issuingData.push({ ...r, id: Date.now() + Math.random() }); addedIssuing++; }
-        }
-        issuingData.sort((a, b) => new Date(b.date) - new Date(a.date));
-    }
-
-    if (Array.isArray(snapshot.returnsData)) {
-        for (const r of snapshot.returnsData) {
-            const dup = returnsData.some(x => x.date === r.date && x.drug === r.drug && x.qty === r.qty && x.location === r.location);
-            if (!dup) { returnsData.push({ ...r, id: Date.now() + Math.random() }); addedReturns++; }
-        }
-        returnsData.sort((a, b) => new Date(b.date) - new Date(a.date));
-    }
-
-    const listSources = [
-        [snapshot.customLocations, rememberLocationIfNew],
-        [snapshot.customUnits, rememberUnitIfNew],
-        [snapshot.customSuppliers, rememberSupplierIfNew],
-        [snapshot.customReceivedBy, rememberReceivedByIfNew],
-        [snapshot.customRecipients, rememberRecipientIfNew]
-    ];
-    for (const [values, rememberFn] of listSources) {
-        if (!Array.isArray(values)) continue;
-        for (const v of values) {
-            const before = customLocations.length + customUnits.length + customSuppliers.length + customReceivedBy.length + customRecipients.length;
-            rememberFn(v);
-            const after = customLocations.length + customUnits.length + customSuppliers.length + customReceivedBy.length + customRecipients.length;
-            if (after > before) addedListValues++;
-        }
-    }
-
-    return { addedDrugs, updatedDrugs, addedReceiving, addedIssuing, addedReturns, addedListValues };
-}
-
 // Downloads a new copy of this whole file with the current data baked in,
 // so sending that file to another device and opening it brings the data along.
 // Note: the login password is NOT included in the snapshot for safety — the
@@ -11896,8 +11784,8 @@ async function resolveUserRole(user) {
         currentUserRole = "staff";
     }
 
-    const manageBtn = document.getElementById("manageTeamBtn");
-    if (manageBtn) manageBtn.style.display = currentUserRole === "admin" ? "inline-block" : "none";
+    const manageBtn = document.getElementById("navManageTeamItem");
+    if (manageBtn) manageBtn.style.display = currentUserRole === "admin" ? "flex" : "none";
 
     // Admins get a notification when a new request comes in — ask for
     // permission once we know they're actually an admin.
@@ -11912,6 +11800,7 @@ async function resolveUserRole(user) {
 // MANAGE TEAM (admin only) — promote/demote staff <-> admin
 // ============================================================
 async function showManageTeam() {
+    closeAllDropdowns();
     if (currentUserRole !== "admin") return;
     document.getElementById("manageTeamModal").classList.add("active");
     const tbody = document.getElementById("teamRolesBody");
@@ -11969,6 +11858,7 @@ auth.onAuthStateChanged(function(user) {
 });
 
 function logout() {
+    closeAllDropdowns();
     if (confirm("Are you sure you want to logout?")) {
         auth.signOut();
         document.getElementById("loginError").classList.remove("show");
@@ -12007,6 +11897,7 @@ document.getElementById("username").addEventListener("keydown", function(e) {
 // ============================================================
 
 function showChangePassword() {
+    closeAllDropdowns();
     document.getElementById("passwordModal").classList.add("active");
     document.getElementById("currentPwd").value = "";
     document.getElementById("newPwd").value = "";
@@ -12863,7 +12754,8 @@ function renderAll() {
     displayReceiving();
     displayIssuing();
     displayReturns();
-        refreshExpiryTracker();
+    refreshInventory();
+    refreshExpiryTracker();
     updateDashboardStats();
     refreshSetup();
     updateDrugSuggestions();
@@ -13164,7 +13056,8 @@ function processAllReceiving() {
     saveAll();
     renderPendingReceiving();
     displayReceiving();
-        refreshExpiryTracker();
+    refreshInventory();
+    refreshExpiryTracker();
     updateDashboardStats();
     alert(`✅ ${count} receiving entr${count === 1 ? 'y' : 'ies'} processed! Inventory updated.`);
 }
@@ -13407,7 +13300,8 @@ function processAllReturns() {
     saveAll();
     renderPendingReturns();
     displayReturns();
-        refreshExpiryTracker();
+    refreshInventory();
+    refreshExpiryTracker();
     updateDashboardStats();
     alert(`✅ ${count} return entr${count === 1 ? 'y' : 'ies'} processed! Inventory updated.`);
 }
@@ -13693,7 +13587,8 @@ function processAllIssuing() {
     saveAll();
     renderPendingIssuing();
     displayIssuing();
-        refreshExpiryTracker();
+    refreshInventory();
+    refreshExpiryTracker();
     updateDashboardStats();
 
     if (failures.length === 0) {
@@ -13725,7 +13620,8 @@ function sortInventory(key) {
         return 0;
     });
     
-        document.querySelectorAll('#inventoryTable th .sort-indicator').forEach(el => el.textContent = '↕');
+    refreshInventory();
+    document.querySelectorAll('#inventoryTable th .sort-indicator').forEach(el => el.textContent = '↕');
     const ths = document.querySelectorAll('#inventoryTable th');
     const indexMap = { id: 0, name: 1, location: 2, balance: 7, expiryDate: 10 };
     if(indexMap[key] !== undefined) {
@@ -13802,7 +13698,69 @@ function displayIssuing() {
     }
 }
 
-
+function refreshInventory() {
+    var tbody = document.getElementById("inventoryBody");
+    if (!tbody) return;
+    tbody.innerHTML = "";
+    let totalUnits = 0, outOfStock = 0, lowStock = 0, expiringSoon = 0, expired = 0;
+    
+    if(inventoryData.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="12" class="empty-state"><span class="icon">📭</span>No drugs in inventory. Add your first drug!</td></tr>`;
+        document.getElementById("totalItems").textContent = "0";
+        document.getElementById("outOfStockCount").textContent = "0";
+        document.getElementById("lowStockCount").textContent = "0";
+        document.getElementById("expiringSoonCount").textContent = "0";
+        document.getElementById("expiredCount").textContent = "0";
+        document.getElementById("totalUnits").textContent = "0";
+        // Clear search results
+        document.getElementById('searchResultCount').textContent = '';
+        return;
+    }
+    
+    for(let item of inventoryData) {
+        totalUnits += item.balance;
+        if(item.balance <= 0) outOfStock++;
+        else if(item.balance <= item.reorder) lowStock++;
+        const expiryInfo = getExpiryStatus(item.expiryDate);
+        if(expiryInfo.status === "EXPIRED") expired++;
+        if(expiryInfo.status === "Expiring Soon") expiringSoon++;
+        
+        const row = tbody.insertRow();
+        row.insertCell(0).textContent = item.id;
+        row.insertCell(1).textContent = item.name;
+        row.insertCell(2).textContent = item.location || "";
+        row.insertCell(3).textContent = item.unit || "";
+        row.insertCell(4).textContent = item.opening;
+        row.insertCell(5).textContent = item.received;
+        row.insertCell(6).textContent = item.issued;
+        row.insertCell(7).innerHTML = `<strong>${item.balance}</strong>`;
+        row.insertCell(8).textContent = item.reorder;
+        const statusCell = row.insertCell(9);
+        const status = computeStockStatus(item.balance, item.reorder);
+        if (status === "OUT OF STOCK") {
+            statusCell.innerHTML = '<span class="badge badge-outofstock">🚫 OUT OF STOCK</span>';
+        } else if (status === "REORDER") {
+            statusCell.innerHTML = '<span class="badge badge-reorder">⚠️ REORDER</span>';
+        } else {
+            statusCell.innerHTML = '<span class="badge badge-ok">✓ OK</span>';
+        }
+        row.insertCell(10).textContent = item.expiryDate || "Not set";
+        const expiryStatusCell = row.insertCell(11);
+        expiryStatusCell.innerHTML = `<span class="badge ${expiryInfo.class}">${expiryInfo.status}</span>`;
+        if(expiryInfo.status === "EXPIRED") row.classList.add("expired-row");
+        else if(expiryInfo.status === "Expiring Soon") row.classList.add("expiring-soon-row");
+    }
+    
+    document.getElementById("totalItems").textContent = inventoryData.length;
+    document.getElementById("outOfStockCount").textContent = outOfStock;
+    document.getElementById("lowStockCount").textContent = lowStock;
+    document.getElementById("expiringSoonCount").textContent = expiringSoon;
+    document.getElementById("expiredCount").textContent = expired;
+    document.getElementById("totalUnits").textContent = totalUnits.toLocaleString();
+    
+    // Re-apply search after refresh
+    searchInventory();
+}
 
 function refreshExpiryTracker() {
     var tbody = document.getElementById("expiryBody");
@@ -14357,7 +14315,8 @@ function saveEditItem(id) {
     saveAll();
     editingItemId = null;
     renderSetupItems();
-        refreshExpiryTracker();
+    refreshInventory();
+    refreshExpiryTracker();
     updateDashboardStats();
     updateDrugSuggestions();
     alert(`✅ Drug "${newName}" updated successfully!`);
@@ -14388,7 +14347,8 @@ function deleteItem(id) {
                 editingItemId = null;
             }
             renderSetupItems();
-                        refreshExpiryTracker();
+            refreshInventory();
+            refreshExpiryTracker();
             updateDashboardStats();
             updateDrugSuggestions();
             alert(`🗑️ "${deletedItem.name}" has been permanently deleted.`);
@@ -14463,7 +14423,8 @@ function addDrugManually() {
     rememberUnitIfNew(unit);
     saveAll();
     closeAddDrugModal();
-        refreshExpiryTracker();
+    refreshInventory();
+    refreshExpiryTracker();
     updateDashboardStats();
     renderSetupItems();
     updateDrugSuggestions();
@@ -15040,29 +15001,7 @@ function renderAbcKpis() {
         <div class="stat-card accent-green"><h4>Class A (top 80% volume)</h4><div class="number">${aCount}</div></div>
         <div class="stat-card accent-blue"><h4>Class B (next 15%)</h4><div class="number">${bCount}</div></div>
         <div class="stat-card accent-orange"><h4>Class C (last 5%)</h4><div class="number">${cCount}</div></div>
-        <div class="stat-card"><h4>Never Issued</h4><div class="number">${naCount}</div>
-            <!-- CLEAR DATA SECTION -->
-            <div class="form-card" id="clearDataSection" style="border: 1px solid #fc8181; background: #fff5f5; margin-top: 30px;">
-                <h3 style="color: #c53030;">🗑️ Clear Data</h3>
-                <p style="color: #718096; font-size: 13px; margin-bottom: 15px;">
-                    Permanently delete transaction records. This action <strong>cannot be undone</strong>.
-                </p>
-                <div class="flex-btns">
-                    <button onclick="clearReceivingHistory()" class="btn-outline" style="border-color: #c53030; color: #c53030;">
-                        🗑️ Clear Receiving History
-                    </button>
-                    <button onclick="clearIssuingHistory()" class="btn-outline" style="border-color: #c53030; color: #c53030;">
-                        🗑️ Clear Issuing History
-                    </button>
-                    <button onclick="clearReturnsHistory()" class="btn-outline" style="border-color: #c53030; color: #c53030;">
-                        🗑️ Clear Returns History
-                    </button>
-                    <button onclick="clearAllHistories()" class="btn-clear-all" style="background: #742a2a;">
-                        ☠️ Clear ALL Histories
-                    </button>
-                </div>
-            </div>
-</div>
+        <div class="stat-card"><h4>Never Issued</h4><div class="number">${naCount}</div></div>
     `;
 }
 
@@ -15245,42 +15184,126 @@ function exportForecastCSV() {
     );
 }
 
-function openTab(tabName) {
+function openTab(evt, tabName) {
     const contents = document.getElementsByClassName("tabcontent");
     for(let c of contents) c.style.display = "none";
-    const navItems = document.querySelectorAll('.nav-item');
-    for(let n of navItems) n.classList.remove('active');
+    const links = document.getElementsByClassName("tablinks");
+    for(let l of links) l.className = l.className.replace(" active", "");
     document.getElementById(tabName).style.display = "block";
-    var activeNav = document.getElementById('nav-' + tabName);
-    if(activeNav) activeNav.classList.add('active');
-    document.getElementById('sidebar').classList.remove('open');
-    document.getElementById('mobileOverlay').classList.remove('show');
+    evt.currentTarget.className += " active";
+    if(tabName === "Inventory") refreshInventory();
     if(tabName === "ExpiryTracker") refreshExpiryTracker();
     if(tabName === "Dashboard") updateDashboardStats();
     if(tabName === "Setup") renderSetupItems();
     if(tabName === "Reports") refreshReports();
+    updateParentNavHighlight(tabName);
+    closeAllDropdowns();
 }
 
-function toggleSubMenu(menuId) {
-    var menu = document.getElementById(menuId);
-    var parent = document.querySelector('[onclick="toggleSubMenu('' + menuId + '')"]');
-    if(menu.classList.contains('open')) {
-        menu.classList.remove('open');
-        if(parent) parent.classList.remove('expanded');
-    } else {
-        menu.classList.add('open');
-        if(parent) parent.classList.add('expanded');
+// Keeps the "Dashboard" and "Setup" group buttons visually highlighted
+// whenever the currently open tab is one of their dropdown children —
+// not just when the group button itself was the thing clicked.
+function updateParentNavHighlight(tabName) {
+    const dashboardBtn = document.getElementById("navDashboardBtn");
+    const setupBtn = document.getElementById("navSetupBtn");
+    if (dashboardBtn) dashboardBtn.classList.toggle("active", ["Dashboard", "Reports", "ExpiryTracker"].includes(tabName));
+    if (setupBtn) setupBtn.classList.toggle("active", tabName === "Setup");
+}
+
+// Jumps to the Setup tab and smooth-scrolls to a specific section inside it
+// (used by the "Manage List" / "Manage Drugs" items in the Setup dropdown).
+function openSetupSection(evt, sectionId) {
+    openTab(evt, "Setup");
+    setTimeout(() => {
+        const el = document.getElementById(sectionId);
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 60);
+}
+
+// ============================================================
+// NAVBAR DROPDOWNS & FLYOUTS
+// ============================================================
+function closeAllDropdowns() {
+    document.querySelectorAll(".nav-dropdown.open").forEach(el => el.classList.remove("open"));
+    document.querySelectorAll(".nav-flyout.open").forEach(el => el.classList.remove("open"));
+    document.querySelectorAll(".nav-caret-btn.open").forEach(el => el.classList.remove("open"));
+    document.querySelectorAll(".nav-flyout-trigger.open").forEach(el => el.classList.remove("open"));
+}
+
+function toggleDropdown(evt, dropdownId) {
+    evt.stopPropagation();
+    const dropdown = document.getElementById(dropdownId);
+    const caret = evt.currentTarget;
+    const wasOpen = dropdown.classList.contains("open");
+    closeAllDropdowns();
+    if (!wasOpen) {
+        dropdown.classList.add("open");
+        caret.classList.add("open");
     }
 }
 
-function toggleSidebar() {
-    document.getElementById('sidebar').classList.toggle('open');
-    document.getElementById('mobileOverlay').classList.toggle('show');
+function toggleFlyout(evt, flyoutId) {
+    evt.stopPropagation();
+    const flyout = document.getElementById(flyoutId);
+    const trigger = evt.currentTarget;
+    const wasOpen = flyout.classList.contains("open");
+    document.querySelectorAll(".nav-flyout.open").forEach(el => { if (el.id !== flyoutId) el.classList.remove("open"); });
+    document.querySelectorAll(".nav-flyout-trigger.open").forEach(el => { if (el !== trigger) el.classList.remove("open"); });
+    flyout.classList.toggle("open", !wasOpen);
+    trigger.classList.toggle("open", !wasOpen);
 }
 
-function scrollToSection(sectionId) {
-    var el = document.getElementById(sectionId);
-    if(el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+// Clicking anywhere outside the navbar's dropdown/flyout area closes it.
+document.addEventListener("click", function(e) {
+    if (!e.target.closest(".nav-item")) closeAllDropdowns();
+});
+
+// ============================================================
+// CLEAR DATA — permanently delete transaction history logs.
+// Separate from "Clear Inventory Data": this never touches the current
+// drug list, only the Receiving / Issuing / Returns history records.
+// ============================================================
+function clearIssuingHistory() {
+    closeAllDropdowns();
+    if (issuingData.length === 0) { alert("Issuing history is already empty."); return; }
+    if (!confirm(`⚠️ This will permanently delete all ${issuingData.length} issuing record(s).\n\nCurrent stock balances and the drug list itself are NOT affected.\n\nThis cannot be undone. Continue?`)) return;
+    issuingData = [];
+    saveAll();
+    renderAll();
+    alert("✅ Issuing history cleared.");
+}
+
+function clearReceivingHistory() {
+    closeAllDropdowns();
+    if (receivingData.length === 0) { alert("Receiving history is already empty."); return; }
+    if (!confirm(`⚠️ This will permanently delete all ${receivingData.length} receiving record(s).\n\nCurrent stock balances and the drug list itself are NOT affected.\n\nThis cannot be undone. Continue?`)) return;
+    receivingData = [];
+    saveAll();
+    renderAll();
+    alert("✅ Receiving history cleared.");
+}
+
+function clearReturnsHistory() {
+    closeAllDropdowns();
+    if (returnsData.length === 0) { alert("Returns history is already empty."); return; }
+    if (!confirm(`⚠️ This will permanently delete all ${returnsData.length} returns record(s).\n\nCurrent stock balances and the drug list itself are NOT affected.\n\nThis cannot be undone. Continue?`)) return;
+    returnsData = [];
+    saveAll();
+    renderAll();
+    alert("✅ Returns history cleared.");
+}
+
+function clearAllHistories() {
+    closeAllDropdowns();
+    const total = issuingData.length + receivingData.length + returnsData.length;
+    if (total === 0) { alert("All history is already empty."); return; }
+    if (!confirm(`⚠️ This will permanently delete ALL transaction history:\n\n📤 ${issuingData.length} issuing record(s)\n📦 ${receivingData.length} receiving record(s)\n🔄 ${returnsData.length} returns record(s)\n\nCurrent stock balances and the drug list itself are NOT affected.\n\nThis cannot be undone. Continue?`)) return;
+    issuingData = [];
+    receivingData = [];
+    returnsData = [];
+    saveAll();
+    renderAll();
+    alert("✅ All transaction history cleared.");
 }
 
 // Close modal on outside click
@@ -15309,51 +15332,6 @@ console.log("✅ Pharmacy Inventory System loaded!");
 console.log("📍 Location dropdown with type-ahead support");
 console.log("🔍 Search feature in Inventory tab");
 console.log("📦 No sample data - start with empty inventory");
-
-        </div> <!-- /.main-content -->
-
-/* ========== CLEAR DATA FUNCTIONS ========== */
-function clearReceivingHistory() {
-    if (!confirm('⚠️ Are you sure you want to permanently delete ALL receiving transaction records?\n\nThis cannot be undone.')) return;
-    if (!confirm('🔴 FINAL WARNING: This will erase all receiving history forever. Proceed?')) return;
-    receivingHistory = [];
-    localStorage.setItem('receivingHistory', JSON.stringify(receivingHistory));
-    renderReceivingTable();
-    showToast('✅ Receiving history cleared permanently', 'success');
-}
-
-function clearIssuingHistory() {
-    if (!confirm('⚠️ Are you sure you want to permanently delete ALL issuing transaction records?\n\nThis cannot be undone.')) return;
-    if (!confirm('🔴 FINAL WARNING: This will erase all issuing history forever. Proceed?')) return;
-    issuingHistory = [];
-    localStorage.setItem('issuingHistory', JSON.stringify(issuingHistory));
-    renderIssuingTable();
-    showToast('✅ Issuing history cleared permanently', 'success');
-}
-
-function clearReturnsHistory() {
-    if (!confirm('⚠️ Are you sure you want to permanently delete ALL returned goods records?\n\nThis cannot be undone.')) return;
-    if (!confirm('🔴 FINAL WARNING: This will erase all returns history forever. Proceed?')) return;
-    returnsHistory = [];
-    localStorage.setItem('returnsHistory', JSON.stringify(returnsHistory));
-    renderReturnsTable();
-    showToast('✅ Returns history cleared permanently', 'success');
-}
-
-function clearAllHistories() {
-    if (!confirm('☠️ DANGER: You are about to delete ALL transaction histories (Receiving, Issuing, AND Returns).\n\nThis cannot be undone.')) return;
-    if (!confirm('🔴 FINAL WARNING: ALL history will be wiped. Are you absolutely sure?')) return;
-    receivingHistory = [];
-    issuingHistory = [];
-    returnsHistory = [];
-    localStorage.setItem('receivingHistory', JSON.stringify(receivingHistory));
-    localStorage.setItem('issuingHistory', JSON.stringify(issuingHistory));
-    localStorage.setItem('returnsHistory', JSON.stringify(returnsHistory));
-    renderReceivingTable();
-    renderIssuingTable();
-    renderReturnsTable();
-    showToast('☠️ All transaction histories cleared permanently', 'success');
-}
 </script>
 
 </body></html>
