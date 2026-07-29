@@ -1878,6 +1878,25 @@
                         <tbody id="supplierTableBody"></tbody>
                     </table>
                 </div>
+                <div id="supplierRecentDeliveriesWrap" style="display:none; margin-top:20px;">
+                    <h4 style="margin-bottom:8px;">📦 Recent Supplies from <span id="supplierRecentDeliveriesName"></span></h4>
+                    <div class="table-wrapper">
+                        <table id="supplierRecentDeliveriesTable">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Drug / Item</th>
+                                    <th>Qty</th>
+                                    <th>Unit</th>
+                                    <th>Location</th>
+                                    <th>Batch No.</th>
+                                    <th>Received By</th>
+                                </tr>
+                            </thead>
+                            <tbody id="supplierRecentDeliveriesBody"></tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
 
             <div class="search-section">
@@ -12306,10 +12325,11 @@ function removePendingRequisition(pendingId) {
 }
 
 function clearPendingRequisitions() {
-    if (pendingRequisitions.length === 0) return;
+    if (pendingRequisitions.length === 0) { alert("Your request list is already empty."); return; }
     if (confirm(`Clear all ${pendingRequisitions.length} items from your request list? Nothing will be submitted.`)) {
         pendingRequisitions = [];
         renderPendingRequisitions();
+        alert("✅ Request list cleared.");
     }
 }
 
@@ -15118,15 +15138,60 @@ function renderSupplierTable() {
         : `${supplierDataset.length} supplier(s) on record`;
     if (filtered.length === 0) {
         body.innerHTML = `<tr><td colspan="5" class="empty-state">${supplierDataset.length === 0 ? "No receiving history yet." : "No suppliers match your search."}</td></tr>`;
+    } else {
+        body.innerHTML = filtered.map(s => `
+            <tr>
+                <td>${escapeHtml(s.supplier)}</td>
+                <td>${s.qty}</td>
+                <td>${s.deliveries}</td>
+                <td>${s.distinctDrugs}</td>
+                <td>${s.lastDelivery || "—"}</td>
+            </tr>
+        `).join("");
+    }
+    renderSupplierRecentDeliveries(searchTerm, filtered);
+}
+
+// When a search narrows things down to one or more suppliers, list out
+// their individual recent deliveries (drug, qty, date, batch, etc.) so
+// the user can see exactly what's been coming in from that supplier —
+// not just the totals in the summary row above.
+function renderSupplierRecentDeliveries(searchTerm, matchedSuppliers) {
+    const wrap = document.getElementById("supplierRecentDeliveriesWrap");
+    const nameEl = document.getElementById("supplierRecentDeliveriesName");
+    const body = document.getElementById("supplierRecentDeliveriesBody");
+    if (!wrap || !body) return;
+
+    if (!searchTerm || matchedSuppliers.length === 0) {
+        wrap.style.display = "none";
         return;
     }
-    body.innerHTML = filtered.map(s => `
+
+    const matchedNames = new Set(matchedSuppliers.map(s => s.supplier));
+    const records = receivingData
+        .filter(r => {
+            const supplier = (r.supplier || "").trim() || "Unknown / Not specified";
+            return matchedNames.has(supplier);
+        })
+        .sort((a, b) => (b.date || "").localeCompare(a.date || ""))
+        .slice(0, 50); // most recent 50 deliveries across the matched supplier(s)
+
+    wrap.style.display = "block";
+    nameEl.textContent = matchedSuppliers.length === 1 ? matchedSuppliers[0].supplier : `"${searchTerm}" (${matchedSuppliers.length} suppliers)`;
+
+    if (records.length === 0) {
+        body.innerHTML = `<tr><td colspan="7" class="empty-state">No delivery records found.</td></tr>`;
+        return;
+    }
+    body.innerHTML = records.map(r => `
         <tr>
-            <td>${escapeHtml(s.supplier)}</td>
-            <td>${s.qty}</td>
-            <td>${s.deliveries}</td>
-            <td>${s.distinctDrugs}</td>
-            <td>${s.lastDelivery || "—"}</td>
+            <td>${escapeHtml(r.date || "")}</td>
+            <td>${escapeHtml(r.drug || "")}</td>
+            <td>${r.qty ?? ""}</td>
+            <td>${escapeHtml(r.unit || "")}</td>
+            <td>${escapeHtml(r.location || "")}</td>
+            <td>${escapeHtml(r.batch || "")}</td>
+            <td>${escapeHtml(r.receivedBy || "")}</td>
         </tr>
     `).join("");
 }
