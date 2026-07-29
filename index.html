@@ -1164,6 +1164,7 @@
                             <button class="nav-dropdown-item" onclick="clearIssuingHistory()">📤 Clear Issuing History</button>
                             <button class="nav-dropdown-item" onclick="clearReceivingHistory()">📦 Clear Receiving History</button>
                             <button class="nav-dropdown-item" onclick="clearReturnsHistory()">🔄 Clear Returns History</button>
+                            <button class="nav-dropdown-item" onclick="clearPendingRequisitions()">📝 Clear My Request List</button>
                             <button class="nav-dropdown-item danger" onclick="clearAllHistories()">🗑️ Clear All Histories</button>
                         </div>
                     </div>
@@ -1526,7 +1527,6 @@
                 <button onclick="document.getElementById('importFileInput').click()" class="btn-outline">📂 Load Data from File</button>
                 <input type="file" id="importFileInput" accept=".html,.htm" style="display:none" onchange="importSnapshotFile(event)">
                 <button onclick="showAddDrugModal()" class="btn-success">➕ Add Drug</button>
-                <button onclick="openSetupTab()" class="btn-warning">⚙️ Manage Drugs</button>
                 <button onclick="openClearInventoryModal()" class="btn-clear-all">🗑️ Clear Inventory Data</button>
             </div>
             <div class="stats-grid">
@@ -1858,6 +1858,10 @@
                 <h3>🏭 Supplier Analysis</h3>
                 <div class="chart-wrap">
                     <canvas id="supplierChart" height="90"></canvas>
+                </div>
+                <div class="form-group">
+                    <label>🔍 Search supplier</label>
+                    <input type="text" id="supplierSearchInput" oninput="renderSupplierTable()" placeholder="Type a supplier name" style="width:260px;">
                 </div>
                 <div class="result-count" id="supplierResultCount"></div>
                 <div class="table-wrapper">
@@ -11540,30 +11544,32 @@ function applySnapshot(snapshot) {
 // in storage from a previous, data-less run of the app.
 function loadEmbeddedSnapshotIfPresent() {
     try {
+        // Once this device has been initialized, never ask about an embedded
+        // file snapshot again — Firestore is the permanent, live source of
+        // truth from here on, and drugs/activities saved there should never
+        // be silently replaced by an old file on a later login. This prompt
+        // only ever runs the very first time this browser opens the app.
+        if (localStorage.getItem('pharmacy_embedded_snapshot_initialized') === '1') return;
+
         const dataEl = document.getElementById('embeddedDataStore');
-        if (!dataEl) return;
+        if (!dataEl) { localStorage.setItem('pharmacy_embedded_snapshot_initialized', '1'); return; }
         const raw = dataEl.textContent.trim();
-        if (!raw || raw === '{}') return;
+        if (!raw || raw === '{}') { localStorage.setItem('pharmacy_embedded_snapshot_initialized', '1'); return; }
 
         const snapshot = JSON.parse(raw);
         const itemCount = (snapshot.inventoryData && snapshot.inventoryData.length) || 0;
         const recvCount = (snapshot.receivingData && snapshot.receivingData.length) || 0;
         const issueCount = (snapshot.issuingData && snapshot.issuingData.length) || 0;
-        if (itemCount === 0 && recvCount === 0 && issueCount === 0) return;
+        if (itemCount === 0 && recvCount === 0 && issueCount === 0) {
+            localStorage.setItem('pharmacy_embedded_snapshot_initialized', '1');
+            return;
+        }
 
-        // Don't re-ask for a snapshot we already imported on this device.
-        if (snapshot.savedAt && localStorage.getItem('pharmacy_last_imported_snapshot') === snapshot.savedAt) return;
-
-        const savedLabel = snapshot.savedAt ? new Date(snapshot.savedAt).toLocaleString() : 'an earlier session';
-        const proceed = confirm(
-            `This file has saved pharmacy data bundled in it (${itemCount} drug record(s), saved ${savedLabel}).\n\n` +
-            `Load it into this browser now?\n\nOK = load it (replaces what's currently stored here)\nCancel = keep what's already on this device`
-        );
-
-        if (snapshot.savedAt) localStorage.setItem('pharmacy_last_imported_snapshot', snapshot.savedAt);
-        if (!proceed) return;
-
+        // First time ever on this device: load the bundled data in
+        // automatically, no OK/Cancel prompt needed.
         applySnapshot(snapshot);
+        if (snapshot.savedAt) localStorage.setItem('pharmacy_last_imported_snapshot', snapshot.savedAt);
+        localStorage.setItem('pharmacy_embedded_snapshot_initialized', '1');
     } catch (e) {
         console.warn('Could not load embedded snapshot:', e);
     }
@@ -12784,6 +12790,24 @@ function saveAll() {
     refreshSetup();
     updateDrugSuggestions();
 }
+
+// ============================================================
+// AUTO-SAVE SAFETY NET — every few seconds, silently re-persist
+// whatever is currently in memory to localStorage (instant, no
+// network needed) so that a sudden power cut, browser crash, or
+// closed tab can't lose an activity that was in progress. This
+// runs continuously in the background; it never asks for
+// confirmation and never interrupts what the user is doing.
+// ============================================================
+setInterval(function autoSaveSafetyNet() {
+    if (!systemInitialized) return;
+    try {
+        localStorage.setItem('pharmacy_inventory', JSON.stringify(inventoryData));
+        localStorage.setItem('pharmacy_receiving', JSON.stringify(receivingData));
+        localStorage.setItem('pharmacy_issuing', JSON.stringify(issuingData));
+        localStorage.setItem('pharmacy_returns', JSON.stringify(returnsData));
+    } catch (e) { /* ignore quota errors, next tick will retry */ }
+}, 8000); // every 8 seconds
 
 function updateDrugSuggestions() {
     const datalist1 = document.getElementById('drugSuggestions');
@@ -15083,13 +15107,20 @@ function renderSupplierChart() {
 function renderSupplierTable() {
     const body = document.getElementById("supplierTableBody");
     const resultCount = document.getElementById("supplierResultCount");
+    const searchInput = document.getElementById("supplierSearchInput");
     if (!body) return;
-    if (resultCount) resultCount.textContent = `${supplierDataset.length} supplier(s) on record`;
-    if (supplierDataset.length === 0) {
-        body.innerHTML = `<tr><td colspan="5" class="empty-state">No receiving history yet.</td></tr>`;
+    const searchTerm = (searchInput?.value || "").trim().toLowerCase();
+    const filtered = searchTerm
+        ? supplierDataset.filter(s => s.supplier.toLowerCase().includes(searchTerm))
+        : supplierDataset;
+    if (resultCount) resultCount.textContent = searchTerm
+        ? `${filtered.length} of ${supplierDataset.length} supplier(s) match "${searchTerm}"`
+        : `${supplierDataset.length} supplier(s) on record`;
+    if (filtered.length === 0) {
+        body.innerHTML = `<tr><td colspan="5" class="empty-state">${supplierDataset.length === 0 ? "No receiving history yet." : "No suppliers match your search."}</td></tr>`;
         return;
     }
-    body.innerHTML = supplierDataset.map(s => `
+    body.innerHTML = filtered.map(s => `
         <tr>
             <td>${escapeHtml(s.supplier)}</td>
             <td>${s.qty}</td>
