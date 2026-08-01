@@ -26199,42 +26199,18 @@ function applySnapshot(snapshot) {
     localStorage.setItem('pharmacy_pending_push', '1');
 }
 
-// Runs on every page load. If this copy of the file has a snapshot baked in
-// (from "Save & Share") that hasn't already been imported into this browser,
-// ask before loading it in. Unlike the earlier version of this check, this
-// no longer gets blocked just because the browser has empty [] arrays sitting
-// in storage from a previous, data-less run of the app.
+// Runs on every page load. Previously this auto-loaded a data snapshot baked
+// into this HTML file and pushed it up to the shared Firestore database the
+// first time each browser/file opened it. That caused real, live changes to
+// get silently overwritten by old data — because every freshly downloaded or
+// re-exported copy of this file looks "new" to the browser, the "already
+// did this" flag never reliably carried over, so the old snapshot kept
+// re-applying and re-uploading, wiping out anything added since.
+// Firestore is the single source of truth now. This function is intentionally
+// disabled — to bring in data from another file on purpose, use the
+// "Load Data from File" button instead, which always asks first.
 function loadEmbeddedSnapshotIfPresent() {
-    try {
-        // Once this device has been initialized, never ask about an embedded
-        // file snapshot again — Firestore is the permanent, live source of
-        // truth from here on, and drugs/activities saved there should never
-        // be silently replaced by an old file on a later login. This prompt
-        // only ever runs the very first time this browser opens the app.
-        if (localStorage.getItem('pharmacy_embedded_snapshot_initialized') === '1') return;
-
-        const dataEl = document.getElementById('embeddedDataStore');
-        if (!dataEl) { localStorage.setItem('pharmacy_embedded_snapshot_initialized', '1'); return; }
-        const raw = dataEl.textContent.trim();
-        if (!raw || raw === '{}') { localStorage.setItem('pharmacy_embedded_snapshot_initialized', '1'); return; }
-
-        const snapshot = JSON.parse(raw);
-        const itemCount = (snapshot.inventoryData && snapshot.inventoryData.length) || 0;
-        const recvCount = (snapshot.receivingData && snapshot.receivingData.length) || 0;
-        const issueCount = (snapshot.issuingData && snapshot.issuingData.length) || 0;
-        if (itemCount === 0 && recvCount === 0 && issueCount === 0) {
-            localStorage.setItem('pharmacy_embedded_snapshot_initialized', '1');
-            return;
-        }
-
-        // First time ever on this device: load the bundled data in
-        // automatically, no OK/Cancel prompt needed.
-        applySnapshot(snapshot);
-        if (snapshot.savedAt) localStorage.setItem('pharmacy_last_imported_snapshot', snapshot.savedAt);
-        localStorage.setItem('pharmacy_embedded_snapshot_initialized', '1');
-    } catch (e) {
-        console.warn('Could not load embedded snapshot:', e);
-    }
+    return;
 }
 
 // Manual fallback: lets someone pick a previously-shared Gaki HTML file at
