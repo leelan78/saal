@@ -2355,25 +2355,8 @@ function importSnapshotFile(event) {
             if (!proceed) return;
 
             applySnapshot(snapshot);
-            setSyncStatus('⏳ Saving imported data to cloud...', 'info');
-
-            sharedDocRef.set({
-                inventoryData: snapshot.inventoryData || [],
-                receivingData: snapshot.receivingData || [],
-                issuingData: snapshot.issuingData || [],
-                returnsData: snapshot.returnsData || [],
-                customLocations: snapshot.customLocations || [],
-                customUnits: snapshot.customUnits || [],
-                customSuppliers: snapshot.customSuppliers || [],
-                customReceivedBy: snapshot.customReceivedBy || [],
-                customRecipients: snapshot.customRecipients || [],
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-            }, { merge: true }).then(() => {
-                alert('✅ Data loaded and saved to the cloud! Reloading the app...');
-                location.reload();
-            }).catch(err => {
-                alert('❌ Could not save to the cloud: ' + err.message + '\n\nYour data was NOT saved. Please check your internet connection and try again.');
-            });
+            alert('✅ Data loaded! Reloading the app now — it will sync to the cloud automatically in the background.');
+            location.reload();
         } catch (err) {
             alert('❌ Could not read that file: ' + err.message);
         }
@@ -6954,6 +6937,32 @@ console.log("📦 No sample data - start with empty inventory");
     return true;
   }
 
+  function aiNormalizeDateForInput(raw){
+    if (!raw) return "";
+    const s = raw.trim();
+    // Already YYYY-MM-DD
+    let m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (m) return s;
+    // D/M/Y or M/D/Y or D-M-Y etc, with 2 or 4 digit year
+    m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+    if (m) {
+      let [, a, b, year] = m;
+      a = parseInt(a, 10); b = parseInt(b, 10);
+      let yr = parseInt(year, 10);
+      if (year.length === 2) yr += (yr < 70 ? 2000 : 1900);
+      // Decide day vs month: if first part > 12 it must be the day
+      let day, month;
+      if (a > 12) { day = a; month = b; }
+      else if (b > 12) { day = b; month = a; }
+      else { day = a; month = b; } // ambiguous - assume D/M/Y (matches date-picker locale used elsewhere)
+      if (month < 1 || month > 12 || day < 1 || day > 31) return "";
+      const mm = String(month).padStart(2, "0");
+      const dd = String(day).padStart(2, "0");
+      return `${yr}-${mm}-${dd}`;
+    }
+    return "";
+  }
+
   function aiHandleOcrText(rawText, kind){
     const lines = rawText.split("\n").map(l=>l.trim()).filter(Boolean);
     if (lines.length === 0) { aiAddBot("I couldn't read any text from that image clearly. Please try a clearer photo or enter the details manually."); return; }
@@ -6973,16 +6982,31 @@ console.log("📦 No sample data - start with empty inventory");
       if (nameGuess) document.getElementById("receiptDrug").value = nameGuess;
       if (typeof updateReceiveAvailability === "function") updateReceiveAvailability();
       if (qty) document.getElementById("receiptQty").value = qty;
-      if (dateMatch) document.getElementById("receiptExpiry").value = "";
+      let normalizedDate = "";
+      if (dateMatch) {
+        normalizedDate = aiNormalizeDateForInput(dateMatch[1]);
+        document.getElementById("receiptExpiry").value = normalizedDate;
+      }
       if (batchMatch) document.getElementById("receiptBatch").value = batchMatch[1];
       if (supplierMatch) document.getElementById("receiptSupplier").value = supplierMatch[1].trim();
-      aiAddBot(`I've pre-filled the Receiving form from this invoice as best I could:\n• Drug: ${nameGuess || "—"}\n• Qty: ${qty ?? "—"}\n• Batch: ${batchMatch ? batchMatch[1] : "—"}\n• Supplier: ${supplierMatch ? supplierMatch[1].trim() : "—"}\n\nPlease double-check every field on the Receiving tab, then click "Add to List" and "Process All" yourself — I've left it for your review rather than submitting automatically.`);
+      let dateLine = "—";
+      if (dateMatch) dateLine = normalizedDate ? normalizedDate : `${dateMatch[1]} (couldn't auto-convert — please enter it manually in YYYY-MM-DD format)`;
+      aiAddBot(`I've pre-filled the Receiving form from this invoice as best I could:\n• Drug: ${nameGuess || "—"}\n• Qty: ${qty ?? "—"}\n• Expiry: ${dateLine}\n• Batch: ${batchMatch ? batchMatch[1] : "—"}\n• Supplier: ${supplierMatch ? supplierMatch[1].trim() : "—"}\n\nPlease double-check every field on the Receiving tab, then click "Add to List" and "Process All" yourself — I've left it for your review rather than submitting automatically.`);
     } else {
       aiSwitchTab("Setup");
       if (typeof showAddDrugModal === "function") showAddDrugModal();
       if (nameGuess) document.getElementById("manualDrugName").value = nameGuess;
-      if (dateMatch) document.getElementById("manualDrugExpiry").value = "";
-      aiAddBot(`I've opened "Add Drug" and filled in what I could read from the label:\n• Name: ${nameGuess || "—"}\n${dateMatch ? "• Possible expiry text found: " + dateMatch[1] + " — please enter it in the correct YYYY-MM-DD format.\n" : ""}Please review and complete the remaining fields, then click Add.`);
+      let normalizedLabelDate = "";
+      if (dateMatch) {
+        normalizedLabelDate = aiNormalizeDateForInput(dateMatch[1]);
+        document.getElementById("manualDrugExpiry").value = normalizedLabelDate;
+      }
+      const labelDateNote = dateMatch
+        ? (normalizedLabelDate
+            ? `• Expiry: ${normalizedLabelDate}\n`
+            : `• Possible expiry text found: ${dateMatch[1]} — please enter it in the correct YYYY-MM-DD format.\n`)
+        : "";
+      aiAddBot(`I've opened "Add Drug" and filled in what I could read from the label:\n• Name: ${nameGuess || "—"}\n${labelDateNote}Please review and complete the remaining fields, then click Add.`);
     }
   }
 
