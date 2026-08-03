@@ -2311,18 +2311,20 @@ function populateRecipientDatalists() {
 // ============================================================
 
 function applySnapshot(snapshot) {
-    if (snapshot.inventoryData) localStorage.setItem('pharmacy_inventory', JSON.stringify(snapshot.inventoryData));
-    if (snapshot.receivingData) localStorage.setItem('pharmacy_receiving', JSON.stringify(snapshot.receivingData));
-    if (snapshot.issuingData) localStorage.setItem('pharmacy_issuing', JSON.stringify(snapshot.issuingData));
-    if (snapshot.returnsData) localStorage.setItem('pharmacy_returns', JSON.stringify(snapshot.returnsData));
-    if (snapshot.customLocations) localStorage.setItem('pharmacy_custom_locations', JSON.stringify(snapshot.customLocations));
-    if (snapshot.customUnits) localStorage.setItem('pharmacy_custom_units', JSON.stringify(snapshot.customUnits));
-    if (snapshot.customSuppliers) localStorage.setItem('pharmacy_custom_suppliers', JSON.stringify(snapshot.customSuppliers));
-    if (snapshot.customReceivedBy) localStorage.setItem('pharmacy_custom_receivedby', JSON.stringify(snapshot.customReceivedBy));
-    if (snapshot.customRecipients) localStorage.setItem('pharmacy_custom_recipients', JSON.stringify(snapshot.customRecipients));
-    if (snapshot.customLocations) localStorage.setItem('pharmacy_locations_seeded', '1');
-    if (snapshot.savedAt) localStorage.setItem('pharmacy_last_imported_snapshot', snapshot.savedAt);
     localStorage.setItem('pharmacy_pending_push', '1');
+    const setSafe = (key, value) => { try { localStorage.setItem(key, value); } catch (e) { console.warn('Could not store ' + key, e); } };
+    if (snapshot.inventoryData) setSafe('pharmacy_inventory', JSON.stringify(snapshot.inventoryData));
+    if (snapshot.receivingData) setSafe('pharmacy_receiving', JSON.stringify(snapshot.receivingData));
+    if (snapshot.issuingData) setSafe('pharmacy_issuing', JSON.stringify(snapshot.issuingData));
+    if (snapshot.returnsData) setSafe('pharmacy_returns', JSON.stringify(snapshot.returnsData));
+    if (snapshot.customLocations) setSafe('pharmacy_custom_locations', JSON.stringify(snapshot.customLocations));
+    if (snapshot.customUnits) setSafe('pharmacy_custom_units', JSON.stringify(snapshot.customUnits));
+    if (snapshot.customSuppliers) setSafe('pharmacy_custom_suppliers', JSON.stringify(snapshot.customSuppliers));
+    if (snapshot.customReceivedBy) setSafe('pharmacy_custom_receivedby', JSON.stringify(snapshot.customReceivedBy));
+    if (snapshot.customRecipients) setSafe('pharmacy_custom_recipients', JSON.stringify(snapshot.customRecipients));
+    if (snapshot.customLocations) setSafe('pharmacy_locations_seeded', '1');
+    if (snapshot.savedAt) setSafe('pharmacy_last_imported_snapshot', snapshot.savedAt);
+    window.__gakiImportedSnapshot = snapshot;
 }
 
 function loadEmbeddedSnapshotIfPresent() {
@@ -2353,8 +2355,25 @@ function importSnapshotFile(event) {
             if (!proceed) return;
 
             applySnapshot(snapshot);
-            alert('✅ Data loaded! Reloading the app...');
-            location.reload();
+            setSyncStatus('⏳ Saving imported data to cloud...', 'info');
+
+            sharedDocRef.set({
+                inventoryData: snapshot.inventoryData || [],
+                receivingData: snapshot.receivingData || [],
+                issuingData: snapshot.issuingData || [],
+                returnsData: snapshot.returnsData || [],
+                customLocations: snapshot.customLocations || [],
+                customUnits: snapshot.customUnits || [],
+                customSuppliers: snapshot.customSuppliers || [],
+                customReceivedBy: snapshot.customReceivedBy || [],
+                customRecipients: snapshot.customRecipients || [],
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true }).then(() => {
+                alert('✅ Data loaded and saved to the cloud! Reloading the app...');
+                location.reload();
+            }).catch(err => {
+                alert('❌ Could not save to the cloud: ' + err.message + '\n\nYour data was NOT saved. Please check your internet connection and try again.');
+            });
         } catch (err) {
             alert('❌ Could not read that file: ' + err.message);
         }
