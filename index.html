@@ -3262,10 +3262,10 @@ function generateId() {
 function initSystem() {
     if (systemInitialized) return;
     
+    loadAllData();
     loadCustomLists();
     populateLocationDatalists();
     populateUnitDatalists();
-    loadAllData();
     renderRequisitions();
 
     const reqDateEl = document.getElementById("reqDate");
