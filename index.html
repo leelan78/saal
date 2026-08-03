@@ -1111,6 +1111,7 @@
 </div>
 
 <!-- MAIN INVENTORY SYSTEM -->
+<div id="gakiSyncStatus" style="display:none; position:sticky; top:0; z-index:9999; padding:8px 14px; font:13px system-ui,sans-serif; text-align:center;"></div>
 <div id="mainApp" style="display: none;">
     <div class="container">
         <div class="header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
@@ -2718,9 +2719,29 @@ let firestoreReady = false;
 let applyingRemoteUpdate = false;
 let saveDebounceTimer = null;
 
+function setSyncStatus(message, kind) {
+    const el = document.getElementById('gakiSyncStatus');
+    if (!el) return;
+    const styles = {
+        info:    { bg: '#fff8e1', color: '#8a6d00', border: '#f0c000' },
+        success: { bg: '#e6f7ed', color: '#146c2e', border: '#34a853' },
+        error:   { bg: '#fdecea', color: '#a30000', border: '#d93025' }
+    };
+    const s = styles[kind] || styles.info;
+    el.style.background = s.bg;
+    el.style.color = s.color;
+    el.style.borderBottom = '2px solid ' + s.border;
+    el.style.display = 'block';
+    el.textContent = message;
+}
+
 function pushToFirestore() {
     if (applyingRemoteUpdate) return;
-    if (!firestoreReady) return;
+    if (!firestoreReady) {
+        setSyncStatus('⏳ Waiting for cloud connection before saving — please wait a moment and try again if this stays up.', 'info');
+        return;
+    }
+    setSyncStatus('⏳ Saving to cloud...', 'info');
     sharedDocRef.set({
         inventoryData,
         receivingData,
@@ -2732,10 +2753,17 @@ function pushToFirestore() {
         customReceivedBy,
         customRecipients,
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-    }, { merge: true }).catch(e => console.warn('Firestore save error:', e));
+    }, { merge: true }).then(() => {
+        setSyncStatus('✅ Saved to cloud — ' + inventoryData.length + ' item(s) — ' + new Date().toLocaleTimeString(), 'success');
+        setTimeout(() => { const el = document.getElementById('gakiSyncStatus'); if (el) el.style.display = 'none'; }, 4000);
+    }).catch(e => {
+        console.warn('Firestore save error:', e);
+        setSyncStatus('❌ Cloud save FAILED: ' + e.message + ' — your changes are only on this device right now.', 'error');
+    });
 }
 
 function startFirestoreSync() {
+    setSyncStatus('⏳ Connecting to cloud...', 'info');
     sharedDocRef.onSnapshot((doc) => {
         if (localStorage.getItem('pharmacy_pending_push') === '1') {
             localStorage.removeItem('pharmacy_pending_push');
@@ -2774,8 +2802,11 @@ function startFirestoreSync() {
         }
         firestoreReady = true;
         applyingRemoteUpdate = false;
+        setSyncStatus('✅ Synced from cloud — ' + inventoryData.length + ' item(s)', 'success');
+        setTimeout(() => { const el = document.getElementById('gakiSyncStatus'); if (el) el.style.display = 'none'; }, 4000);
     }, (error) => {
         console.warn('Firestore sync error (staying on local data):', error);
+        setSyncStatus('❌ Cloud connection FAILED: ' + error.message, 'error');
     });
 }
 
