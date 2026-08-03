@@ -3270,11 +3270,7 @@ function initSystem() {
 
     const reqDateEl = document.getElementById("reqDate");
     if (reqDateEl && !reqDateEl.value) reqDateEl.value = new Date().toISOString().split('T')[0];
-    
-    if (inventoryData.length === 0) {
-        saveAll();
-    }
-    
+
     renderAll();
     systemInitialized = true;
 
