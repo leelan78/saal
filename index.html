@@ -2720,6 +2720,7 @@ let saveDebounceTimer = null;
 
 function pushToFirestore() {
     if (applyingRemoteUpdate) return;
+    if (!firestoreReady) return;
     sharedDocRef.set({
         inventoryData,
         receivingData,
