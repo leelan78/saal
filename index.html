@@ -1037,6 +1037,36 @@
         #saveIndicator.show {
             opacity: 1;
         }
+
+        /* ===== Multi-expiry batches ===== */
+        .qty-with-plus { display: flex; gap: 6px; align-items: stretch; }
+        .qty-with-plus input { flex: 1; min-width: 0; }
+        .qty-plus-btn { padding: 0 12px; min-width: 40px; font-size: 20px; font-weight: 700; line-height: 1; border-radius: 8px; border: 2px solid #667eea; background: #fff; color: #667eea; cursor: pointer; box-shadow: none; margin: 0; }
+        .qty-plus-btn:hover { background: #667eea; color: #fff; }
+        .qty-plus-btn.small { min-width: 28px; padding: 2px 8px; font-size: 14px; margin-left: 4px; vertical-align: middle; }
+        .exp-split-note { font-size: 11px; color: #4a5568; margin-top: 3px; line-height: 1.4; }
+        .exp-split-summary { display: block; margin-top: 4px; font-size: 12px; color: #2d3748; line-height: 1.5; }
+        .exp-split-summary a { color: #c53030; text-decoration: none; margin-left: 6px; }
+        .balance-link { cursor: pointer; color: #2b6cb0; text-decoration: underline dotted; }
+        .balance-link:hover { color: #1a4f8a; }
+        .exp-more { font-size: 11px; color: #718096; margin-left: 4px; }
+        .exp-modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 10000; align-items: center; justify-content: center; padding: 16px; }
+        .exp-modal { background: #fff; color: #2d3748; border-radius: 12px; width: 100%; max-width: 560px; max-height: 90vh; overflow-y: auto; padding: 22px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); }
+        .exp-modal h3 { margin: 0 0 6px 0; font-size: 18px; }
+        .exp-modal-sub { margin: 0 0 14px 0; font-size: 13px; color: #4a5568; }
+        .exp-row { display: grid; grid-template-columns: 1fr 1.3fr 34px; gap: 8px; align-items: center; margin-bottom: 8px; }
+        .exp-row input { width: 100%; box-sizing: border-box; }
+        .exp-row-head { font-size: 12px; font-weight: 600; color: #718096; margin-bottom: 4px; }
+        .exp-row-issue { grid-template-columns: 1.2fr 1fr 90px 44px; padding: 6px 0; border-bottom: 1px solid #edf2f7; }
+        .exp-row-info { grid-template-columns: 1.3fr 0.8fr 1fr 1fr; padding: 6px 0; border-bottom: 1px solid #edf2f7; font-size: 14px; }
+        .exp-avail { font-size: 13px; color: #4a5568; }
+        .exp-sub { margin-top: 2px; }
+        .exp-row-remove, .exp-all { padding: 4px 6px; font-size: 12px; border-radius: 6px; border: 1px solid #cbd5e0; background: #fff; color: #4a5568; cursor: pointer; box-shadow: none; margin: 0; }
+        .exp-row-remove:hover { background: #fed7d7; }
+        .exp-all:hover { background: #e2e8f0; }
+        .exp-modal-total { margin: 12px 0 4px 0; font-size: 15px; }
+        .exp-modal-error { color: #c53030; font-size: 13px; min-height: 18px; margin-bottom: 6px; }
+        .exp-modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; }
     </style>
 
     <!-- Firebase (real-time shared database) -->
@@ -1230,7 +1260,11 @@
                     </div>
                     <div class="form-group">
                         <label>📦 Quantity Received *</label>
-                        <input type="number" id="receiptQty" placeholder="0" min="1">
+                        <div class="qty-with-plus">
+                            <input type="number" id="receiptQty" placeholder="0" min="1">
+                            <button type="button" id="receiptPlusBtn" class="qty-plus-btn" style="display:none;" title="More than one expiry date? Enter a quantity for each expiry" onclick="openReceiveSplitModal()">＋</button>
+                        </div>
+                        <small id="receiveSplitSummary" class="exp-split-summary" style="display:none;"></small>
                         <small id="receiveAvailableQty" class="field-hint"></small>
                     </div>
                     <div class="form-group">
@@ -1254,7 +1288,7 @@
                     </div>
                     <div class="form-group">
                         <label>📅 Expiry Date</label>
-                        <input type="date" id="receiptExpiry">
+                        <input type="date" id="receiptExpiry" oninput="updateReceivePlus()" onchange="updateReceivePlus()">
                         <small id="receiveExpiryHint" class="field-hint"></small>
                     </div>
                     <div class="form-group">
@@ -1401,7 +1435,11 @@
                     </div>
                     <div class="form-group">
                         <label>📦 Quantity Issued *</label>
-                        <input type="number" id="issueQty" placeholder="0" min="1" oninput="updateIssueAvailability()">
+                        <div class="qty-with-plus">
+                            <input type="number" id="issueQty" placeholder="0" min="1" oninput="updateIssueAvailability()">
+                            <button type="button" id="issuePlusBtn" class="qty-plus-btn" style="display:none;" title="Choose which expiry date(s) to issue from" onclick="openIssueAllocModal()">＋</button>
+                        </div>
+                        <small id="issueAllocSummary" class="exp-split-summary" style="display:none;"></small>
                         <small id="issueAvailableQty" class="field-hint"></small>
                     </div>
                     <div class="form-group">
@@ -1630,13 +1668,14 @@
                         <option value="no-date">No Expiry Date</option>
                     </select>
                 </div>
+                <button onclick="sortExpiryTable('balance')" class="btn-outline" style="margin-left: 10px;">📊 Sort by Balance</button>
                 <button onclick="exportExpiryReport()" style="margin-left: 10px;">📎 Export Report</button>
             </div>
             <div class="table-wrapper">
                 <table id="expiryTable">
                     <thead>
                         <tr>
-                            <th>Drug ID</th><th>Drug/Item</th><th>Location</th><th>Balance</th><th>Expiry Date</th>
+                            <th>Drug ID</th><th>Drug/Item</th><th>Location</th><th onclick="sortExpiryTable('balance')" style="cursor:pointer;">Balance <span class="sort-indicator" id="expSortBalance">↕</span></th><th onclick="sortExpiryTable('expiryDate')" style="cursor:pointer;">Expiry Date <span class="sort-indicator" id="expSortExpiry">↑</span></th>
                             <th>Days Left</th><th>Status</th><th>Action</th>
                         </tr>
                     </thead>
@@ -2964,6 +3003,20 @@
     in here — so opening that copy on another device loads the same data
     automatically, without needing a network connection.
 -->
+<div id="expModalOverlay" class="exp-modal-overlay">
+    <div class="exp-modal">
+        <h3 id="expModalTitle"></h3>
+        <p id="expModalSub" class="exp-modal-sub"></p>
+        <div id="expModalRows"></div>
+        <div id="expModalAddWrap"><button type="button" id="expModalAddBtn" class="btn-outline" onclick="expModalAddRow()">➕ Add another expiry date</button></div>
+        <div id="expModalTotalWrap" class="exp-modal-total">Total: <strong id="expModalTotal">0</strong> <span id="expModalUnit"></span></div>
+        <div id="expModalError" class="exp-modal-error"></div>
+        <div class="exp-modal-actions">
+            <button type="button" id="expModalCancelBtn" class="btn-outline" onclick="closeExpModal()">Cancel</button>
+            <button type="button" id="expModalApplyBtn" onclick="expModalApply()">Apply</button>
+        </div>
+    </div>
+</div>
 <script type="application/json" id="embeddedDataStore">{"inventoryData":[{"balance":1000,"received":1000,"unit":"Packs","status":"OK","reorder":0,"opening":0,"location":"F-3-1","name":"Amlodipine 10 mg Teva","expiryDate":"2028-06-01","id":"D020","issued":0},{"received":500,"expiryDate":"2028-11-01","unit":"Packs","status":"OK","balance":500,"issued":0,"location":"F-1-3","name":"Olive oil Ear drops 10 ml","reorder":0,"id":"D045","opening":0},{"location":"G-4-1","expiryDate":"2028-10-01","id":"D086","unit":"Vials","issued":0,"reorder":0,"received":500,"status":"OK","opening":0,"balance":500,"name":"Meronem injection 500 mg"},{"location":"C0","id":"D029","reorder":0,"expiryDate":"2028-07-01","opening":0,"unit":"Packs","balance":440,"issued":0,"received":440,"status":"OK","name":"Fluconadenk 150 mg"},{"balance":200,"status":"OK","received":200,"unit":"Vials","reorder":0,"opening":0,"expiryDate":"2029-04-01","location":"G-4-1","name":"Meronem injection 1G","issued":0,"id":"D085"},{"received":180,"id":"D384","name":"Thymair Denk","status":"OK","expiryDate":"2028-04-01","issued":0,"balance":180,"location":"H-2-2","unit":"Packs","opening":0,"reorder":0},{"issued":150,"expiryDate":"","name":"Cerave moisturing cream","received":150,"id":"D622","opening":0,"reorder":20,"status":"OUT OF STOCK","location":"Cross Dock","unit":"Packs","balance":0},{"unit":"Packs","location":"I-3-1","status":"OK","expiryDate":"2027-09-01","id":"D624","balance":120,"name":"Gliclazide Tab 80mg Crescent","received":120,"reorder":20,"issued":0,"opening":0},{"unit":"Packs","location":"A1","id":"D190","issued":0,"name":"Nexium inj 40 mg","status":"OK","reorder":0,"received":100,"opening":0,"balance":100,"expiryDate":"2027-12-01"},{"issued":0,"received":100,"expiryDate":"2028-10-01","name":"Wellwomam Original.","opening":0,"reorder":0,"location":"G-1-1","status":"OK","id":"D117","unit":"Packs","balance":100},{"received":90,"opening":0,"reorder":0,"balance":90,"issued":0,"name":"Orlistat 120 mg  capsules","status":"OK","location":"H-1-2","expiryDate":"2028-03-01","unit":"Packs","id":"D239"},{"status":"OK","name":"Augmentin Tablet 1G","received":88,"id":"D147","issued":0,"balance":88,"expiryDate":"2028-01-01","opening":0,"unit":"Packs","reorder":0,"location":"I-4-1"},{"unit":"Packs","received":63,"balance":63,"id":"D357","reorder":0,"opening":0,"status":"OK","name":"Somazina","issued":0,"expiryDate":"2027-06-01","location":"E0"},{"expiryDate":"2029-02-01","id":"D096","received":60,"unit":"Packs","issued":0,"reorder":0,"status":"OK","opening":0,"balance":60,"name":"Tavanic TB 500 mg","location":"G-3-2"},{"expiryDate":"2028-10-01","unit":"Packs","received":56,"issued":0,"status":"OK","reorder":0,"name":"Metformin Denk 1000 mg 30's Tablet","opening":0,"balance":56,"location":"F-2-1","id":"D450"},{"issued":0,"expiryDate":"2029-04-01","location":"Cross Dock","name":"Spironolactone 100 mg TB","opening":0,"id":"D036","reorder":0,"status":"OK","unit":"Packs","balance":50,"received":50},{"reorder":0,"received":20,"opening":0,"expiryDate":"2028-11-01","balance":20,"unit":"Packs","issued":0,"location":"A1","id":"D243","status":"OK","name":"Rocephin inj 2G"},{"opening":0,"reorder":20,"issued":0,"location":"Cross Dock","id":"D623","name":"Febuxostat","balance":10,"expiryDate":"","received":10,"unit":"Packs","status":"REORDER"},{"unit":"","id":"D341","received":0,"status":"OUT OF STOCK","name":"Hydrocortisone cream 15 G","balance":0,"issued":0,"reorder":0,"expiryDate":"2028-12-01","opening":0,"location":""},{"balance":0,"opening":0,"status":"OUT OF STOCK","reorder":0,"name":"Flagyl 200 mg /5ml","location":"","expiryDate":"2027-12-01","id":"D189","issued":0,"received":0,"unit":""},{"expiryDate":"2028-12-01","name":"Furosemide inj 20 mg China","issued":0,"received":0,"status":"OUT OF STOCK","opening":0,"unit":"","reorder":0,"location":"","balance":0,"id":"D242"},{"opening":0,"reorder":0,"issued":0,"expiryDate":"2028-10-01","balance":0,"received":0,"name":"Levofloxacin Inj Fovox","status":"OUT OF STOCK","location":"","unit":"","id":"D315"},{"id":"D176","expiryDate":"2027-08-01","name":"Lidocaine injection","issued":0,"received":0,"status":"OUT OF STOCK","opening":0,"reorder":0,"unit":"","location":"","balance":0},{"id":"D187","issued":0,"unit":"","location":"","reorder":0,"opening":0,"expiryDate":"2028-03-01","name":"Nizoral Cream 2%","balance":0,"status":"OUT OF STOCK","received":0},{"expiryDate":"2027-06-01","unit":"","issued":0,"id":"D188","location":"","reorder":0,"opening":0,"name":"Nizoral Shampoo 100 ml","status":"OUT OF STOCK","balance":0,"received":0},{"received":0,"status":"OUT OF STOCK","id":"D177","name":"Tramadol injection 50 mg","balance":0,"location":"","unit":"","issued":0,"opening":0,"expiryDate":"2027-01-01","reorder":0},{"status":"OUT OF STOCK","name":"Zithromax suspension","location":"","id":"D178","expiryDate":"2027-08-01","balance":0,"received":0,"unit":"","issued":0,"opening":0,"reorder":0},{"status":"OUT OF STOCK","balance":0,"name":"Zymax 200 mg suspension","received":0,"opening":0,"expiryDate":"2028-03-01","reorder":0,"unit":"","id":"D191","issued":0,"location":""},{"balance":0,"unit":"","status":"OUT OF STOCK","location":"","reorder":0,"opening":0,"received":0,"id":"D199","name":"Ciprofloxacin infusion ECL","expiryDate":"2027-08-01","issued":0},{"issued":0,"name":"Cyprodine Capsules","id":"D197","received":0,"unit":"","opening":0,"reorder":0,"location":"","status":"OUT OF STOCK","expiryDate":"2028-12-01","balance":0},{"issued":0,"received":0,"id":"D113","name":"Cyprodine Syrup 200ml","opening":0,"reorder":0,"location":"","unit":"","status":"OUT OF STOCK","expiryDate":"2029-03-01","balance":0},{"status":"OUT OF STOCK","balance":0,"location":"","opening":0,"reorder":0,"name":"Gucefor (cefuroxime ) 500 mg TB","received":0,"expiryDate":"2027-08-01","id":"D195","issued":0,"unit":""},{"received":0,"unit":"","id":"D200","issued":0,"expiryDate":"2029-02-01","location":"","reorder":0,"status":"OUT OF STOCK","opening":0,"balance":0,"name":"Metronidazole infusion"},{"issued":0,"expiryDate":"2028-04-01","location":"","name":"No-Spa 40 mg Injection 25's","opening":0,"reorder":0,"id":"D196","status":"OUT OF STOCK","unit":"","balance":0,"received":0},{"name":"Stugeron 25 mg TB","id":"D194","status":"OUT OF STOCK","received":0,"unit":"","issued":0,"balance":0,"opening":0,"reorder":0,"expiryDate":"2029-01-01","location":""},{"unit":"","location":"","id":"D198","expiryDate":"2028-08-01","issued":0,"name":"Trialgic Capsules","status":"OUT OF STOCK","reorder":0,"received":0,"opening":0,"balance":0},{"opening":0,"reorder":0,"expiryDate":"2028-01-01","location":"","issued":0,"balance":0,"name":"Troge Ciprofloxacin infusion","id":"D244","status":"OUT OF STOCK","unit":"","received":0},{"reorder":0,"id":"D201","location":"","opening":0,"issued":0,"unit":"","balance":0,"received":0,"name":"Vitamin B complex injection","expiryDate":"2027-10-01","status":"OUT OF STOCK"},{"id":"D170","unit":"","received":0,"issued":0,"expiryDate":"2030-11-01","reorder":0,"status":"OUT OF STOCK","opening":0,"balance":0,"location":"","name":"Avomie Tablet 25 mg"},{"name":"Deep Heat Muscle Rescue","id":"D171","location":"","opening":0,"reorder":0,"issued":0,"balance":0,"unit":"","status":"OUT OF STOCK","received":0,"expiryDate":"2030-01-01"},{"received":0,"unit":"","status":"OUT OF STOCK","id":"D168","expiryDate":"2028-02-01","balance":0,"name":"Gamok ( amoxiciLlin ) TB 500/125 MG","location":"","reorder":0,"issued":0,"opening":0},{"status":"OUT OF STOCK","location":"","name":"Griseofulvin suspension","id":"D169","issued":0,"balance":0,"opening":0,"reorder":0,"unit":"","expiryDate":"2028-05-01","received":0},{"unit":"","id":"D167","status":"OUT OF STOCK","expiryDate":"2028-01-01","received":0,"name":"Lasix 250 mg ( furosemide sodium ) injection","balance":0,"reorder":0,"location":"","issued":0,"opening":0},{"location":"","expiryDate":"2027-12-01","id":"D175","opening":0,"reorder":0,"name":"Mist  Expect Sed","balance":0,"issued":0,"status":"OUT OF STOCK","received":0,"unit":""},{"expiryDate":"2027-11-01","name":"Mist Potassium Citrate syrp 200 ml","status":"OUT OF STOCK","location":"","issued":0,"id":"D174","unit":"","balance":0,"opening":0,"reorder":0,"received":0},{"name":"Nugel suspent","id":"D173","received":0,"issued":0,"unit":"","status":"OUT OF STOCK","location":"","opening":0,"reorder":0,"expiryDate":"2028-05-01","balance":0},{"reorder":0,"opening":0,"balance":0,"id":"D125","unit":"","received":0,"issued":0,"expiryDate":"2028-02-01","status":"OUT OF STOCK","location":"","name":"Rocephin injection 1G"},{"expiryDate":"2028-05-01","balance":0,"location":"","opening":0,"status":"OUT OF STOCK","reorder":0,"name":"Tavanic 5 mg solution for injection","id":"D165","received":0,"issued":0,"unit":""},{"location":"","issued":0,"unit":"","id":"D112","reorder":0,"received":0,"opening":0,"name":"Valupak Vitamins (evening Primrose) 500 mg","balance":0,"status":"OUT OF STOCK","expiryDate":"2028-06-01"},{"name":"Xin-A (ciprofloxacin ) 250 mg suspension","location":"","balance":0,"status":"OUT OF STOCK","opening":0,"reorder":0,"id":"D166","issued":0,"received":0,"unit":"","expiryDate":"2027-09-01"},{"status":"OUT OF STOCK","received":0,"name":"Artesunate inj 60 mg","expiryDate":"2026-09-01","balance":0,"unit":"","location":"","issued":0,"opening":0,"reorder":0,"id":"D215"},{"reorder":0,"opening":0,"location":"","issued":0,"unit":"","balance":0,"expiryDate":"2027-11-01","name":"Backtrox ointment","received":0,"status":"OUT OF STOCK","id":"D212"},{"balance":0,"received":0,"status":"OUT OF STOCK","unit":"","reorder":0,"opening":0,"expiryDate":"2028-09-09","location":"","id":"D049","name":"Celebrex 200 mg 10's","issued":0},{"balance":0,"unit":"","received":0,"reorder":0,"expiryDate":"2028-03-01","opening":0,"status":"OUT OF STOCK","location":"","issued":0,"name":"Celecoxib  200 mg capsules","id":"D214"},{"status":"OUT OF STOCK","expiryDate":"2027-11-01","unit":"","location":"","id":"D216","balance":0,"received":0,"name":"Cox B (CELECOXIB) capsules 200 mg","reorder":0,"opening":0,"issued":0},{"expiryDate":"2029-01-01","id":"D235","unit":"","received":0,"issued":0,"reorder":0,"status":"OUT OF STOCK","opening":0,"location":"","name":"Doreta 37.5MG tB","balance":0},{"unit":"","balance":0,"reorder":0,"id":"D238","opening":0,"status":"OUT OF STOCK","location":"","expiryDate":"2028-04-01","name":"Dufenac ( Diclofenac capsules ) 75 mg","issued":0,"received":0},{"unit":"","location":"","issued":0,"status":"OUT OF STOCK","reorder":0,"expiryDate":"2027-11-01","name":"Dufenac Injection 75mg ( DICLOFENAC)","opening":0,"balance":0,"id":"D302","received":0},{"opening":0,"reorder":0,"issued":0,"received":0,"expiryDate":"2027-10-01","id":"D262","name":"Enterogermina Probiotic susp 5ml 10's","balance":0,"unit":"","status":"OUT OF STOCK","location":""},{"expiryDate":"2028-11-01","issued":0,"received":0,"name":"Finasil Cream","opening":0,"reorder":0,"status":"OUT OF STOCK","id":"D211","unit":"","location":"","balance":0},{"issued":0,"name":"Fosmol (fosfomycin) 3000 mg","received":0,"opening":0,"id":"D217","reorder":0,"status":"OUT OF STOCK","location":"","unit":"","expiryDate":"2027-01-01","balance":0},{"status":"OUT OF STOCK","location":"","unit":"","expiryDate":"2028-12-01","received":0,"balance":0,"name":"Kitenel Cream","reorder":0,"issued":0,"id":"D210","opening":0},{"reorder":0,"opening":0,"issued":0,"unit":"","received":0,"balance":0,"location":"","name":"Losartan 50 mg TB","id":"D237","status":"OUT OF STOCK","expiryDate":"2029-03-01"},{"unit":"","balance":0,"location":"","reorder":0,"opening":0,"status":"OUT OF STOCK","id":"D248","received":0,"name":"Omeprazole injection 40 mg (india)","issued":0,"expiryDate":"2029-02-01"},{"issued":0,"unit":"","received":0,"id":"D249","reorder":0,"opening":0,"expiryDate":"2027-03-01","name":"Omeprazole injection 40 mg (Uk) VEGA","balance":0,"status":"OUT OF STOCK","location":""},{"status":"OUT OF STOCK","received":0,"name":"Panadol Advance 500 mg Caplet","balance":0,"expiryDate":"2028-10-01","id":"D208","issued":0,"opening":0,"location":"","unit":"","reorder":0},{"status":"OUT OF STOCK","balance":0,"location":"","opening":0,"reorder":0,"name":"Panadol Extra 500 mg Caplet","id":"D209","issued":0,"expiryDate":"2028-07-01","unit":"","received":0},{"unit":"","expiryDate":"2028-11-01","id":"D213","status":"OUT OF STOCK","location":"","received":0,"balance":0,"name":"Trizem Cream","reorder":0,"issued":0,"opening":0},{"received":0,"id":"D234","unit":"","expiryDate":"2028-08-01","issued":0,"location":"","reorder":0,"status":"OUT OF STOCK","opening":0,"balance":0,"name":"Vermox TB 500 MG"},{"name":"Vivagest capsules","id":"D236","issued":0,"received":0,"unit":"","status":"OUT OF STOCK","expiryDate":"2028-12-01","opening":0,"reorder":0,"location":"","balance":0},{"unit":"","location":"","expiryDate":"2028-02-01","status":"OUT OF STOCK","received":0,"name":"Benylin Infant Cough syrup","balance":0,"issued":0,"id":"D226","reorder":0,"opening":0},{"received":0,"status":"OUT OF STOCK","name":"Clidacin (Clindamycin) injection 300 mg","expiryDate":"2027-10-01","balance":0,"location":"","id":"D203","issued":0,"unit":"","opening":0,"reorder":0},{"opening":0,"reorder":0,"issued":0,"expiryDate":"2027-03-01","location":"","name":"D-Artep 20 / 160","balance":0,"id":"D207","unit":"","status":"OUT OF STOCK","received":0},{"status":"OUT OF STOCK","balance":0,"location":"","id":"D206","name":"D-Artep 80/640","opening":0,"reorder":0,"received":0,"expiryDate":"2027-03-01","unit":"","issued":0},{"status":"OUT OF STOCK","name":"Feroglobin capsules","received":0,"balance":0,"unit":"","issued":0,"expiryDate":"2028-06-01","id":"D227","opening":0,"location":"","reorder":0},{"unit":"","received":0,"id":"D225","status":"OUT OF STOCK","expiryDate":"2029-12-01","name":"Osteocare Original","balance":0,"issued":0,"location":"","reorder":0,"opening":0},{"received":0,"expiryDate":"2027-11-01","id":"D202","issued":0,"unit":"","reorder":0,"opening":0,"location":"","name":"Pregaben ( Pregabalin) 75 mg","balance":0,"status":"OUT OF STOCK"},{"location":"","status":"OUT OF STOCK","balance":0,"id":"D062","name":"Pregnacare plus","opening":0,"reorder":0,"expiryDate":"2027-11-01","received":0,"unit":"","issued":0},{"balance":0,"received":0,"opening":0,"status":"OUT OF STOCK","reorder":0,"id":"D205","name":"Salbutamol Nebuliser solution 5 mg","location":"","issued":0,"expiryDate":"2027-05-01","unit":""},{"status":"OUT OF STOCK","balance":0,"location":"","expiryDate":"2027-07-01","opening":0,"reorder":0,"name":"Scotram Plus TB (TRAMADOL) 37.5mg","received":0,"id":"D204","issued":0,"unit":""},{"status":"OUT OF STOCK","balance":0,"location":"","name":"Allopurinol 300 mg (Flamingo)","expiryDate":"2028-06-01","opening":0,"reorder":0,"received":0,"unit":"","issued":0,"id":"D222"},{"reorder":0,"id":"D221","opening":0,"expiryDate":"2027-12-01","issued":0,"unit":"","balance":0,"received":0,"name":"Allopurinol 300 mg TB IPCA","location":"","status":"OUT OF STOCK"},{"issued":0,"location":"","name":"Citro C (Ascorbic Acid) TB","opening":0,"reorder":0,"expiryDate":"2028-02-01","status":"OUT OF STOCK","id":"D246","unit":"","received":0,"balance":0},{"unit":"","id":"D218","received":0,"expiryDate":"2028-08-01","status":"OUT OF STOCK","name":"Easylife Vit C 1000 mg","issued":0,"balance":0,"reorder":0,"opening":0,"location":""},{"received":0,"issued":0,"name":"Gaviscon 200 ml","location":"","status":"OUT OF STOCK","expiryDate":"2028-08-01","opening":0,"reorder":0,"id":"D108","balance":0,"unit":""},{"location":"","name":"Lactulose 500 ml","opening":0,"reorder":0,"issued":0,"balance":0,"expiryDate":"2029-10-01","id":"D220","status":"OUT OF STOCK","unit":"","received":0},{"balance":0,"received":0,"status":"OUT OF STOCK","unit":"","reorder":0,"id":"D219","opening":0,"location":"","name":"Medrol (Methylprednisolone) 4 mg TB","issued":0,"expiryDate":"2030-06-01"},{"status":"OUT OF STOCK","balance":0,"opening":0,"name":"Salbutanol Nebuliser solution 2.5 mg","location":"","reorder":0,"id":"D223","expiryDate":"2027-06-01","received":0,"issued":0,"unit":""},{"name":"Sudo Cream","expiryDate":"2028-08-01","status":"OUT OF STOCK","location":"","issued":0,"id":"D232","unit":"","balance":0,"opening":0,"reorder":0,"received":0},{"received":0,"name":"Argesun injection 120 mg","issued":0,"status":"OUT OF STOCK","expiryDate":"2027-08-01","opening":0,"unit":"","reorder":0,"location":"","balance":0,"id":"D183"},{"unit":"","reorder":0,"id":"D182","expiryDate":"2027-04-01","opening":0,"balance":0,"issued":0,"received":0,"name":"Argesun injection 180 mg","status":"OUT OF STOCK","location":""},{"name":"Argesun injection 60 mg","opening":0,"expiryDate":"2027-10-01","reorder":0,"issued":0,"id":"D181","location":"","balance":0,"status":"OUT OF STOCK","unit":"","received":0},{"issued":0,"name":"Artesunate injection 120","expiryDate":"2027-01-01","id":"D184","received":0,"opening":0,"unit":"","reorder":0,"status":"OUT OF STOCK","location":"","balance":0},{"id":"D185","location":"","reorder":0,"opening":0,"unit":"","balance":0,"issued":0,"received":0,"status":"OUT OF STOCK","name":"Blood Glucose Meter","expiryDate":""},{"unit":"","issued":0,"location":"","id":"D352","expiryDate":"2027-09-01","reorder":0,"received":0,"opening":0,"name":"Hydralazine 25 mg (ACCORD) UK TB","status":"OUT OF STOCK","balance":0},{"location":"","reorder":0,"unit":"","expiryDate":"2028-02-01","opening":0,"balance":0,"issued":0,"status":"OUT OF STOCK","received":0,"name":"Hydralazine 25 mg (morning side ) UK","id":"D353"},{"location":"","reorder":0,"expiryDate":"2027-09-01","opening":0,"balance":0,"unit":"","issued":0,"received":0,"status":"OUT OF STOCK","id":"D354","name":"Hydralazine 50MG (morning side ) Tb"},{"received":0,"unit":"","status":"OUT OF STOCK","expiryDate":"2028-08-01","balance":0,"id":"D179","issued":0,"reorder":0,"opening":0,"name":"Fovox TB (Levofloxacin) 500 mg","location":""},{"expiryDate":"2027-12-01","issued":0,"location":"","name":"Itracin 100 mg Tablet","opening":0,"reorder":0,"status":"OUT OF STOCK","id":"D180","unit":"","received":0,"balance":0},{"issued":0,"name":"Baclofen  TB 10 mg","location":"","id":"D306","opening":0,"received":0,"reorder":0,"unit":"","expiryDate":"2028-01-01","status":"OUT OF STOCK","balance":0},{"unit":"","received":0,"id":"D328","status":"OUT OF STOCK","expiryDate":"","balance":0,"name":"Exatob (Tobramycin) eye drop","location":"","reorder":0,"issued":0,"opening":0},{"unit":"","status":"OUT OF STOCK","received":0,"id":"D335","expiryDate":"","balance":0,"name":"Pre-Meco","reorder":0,"location":"","issued":0,"opening":0},{"unit":"","balance":0,"received":0,"id":"D322","status":"OUT OF STOCK","expiryDate":"2029-10-01","reorder":0,"opening":0,"name":"Progynova 1 mg TB","location":"","issued":0},{"balance":0,"location":"","opening":0,"status":"OUT OF STOCK","reorder":0,"expiryDate":"2027-03-01","name":"Zinnat TB 500 mg","id":"D281","received":0,"issued":0,"unit":""},{"unit":"","balance":0,"reorder":0,"received":0,"opening":0,"status":"OUT OF STOCK","expiryDate":"2028-10-01","id":"D336","name":"Analgin Injectrion 2.5G","issued":0,"location":""},{"id":"D274","status":"OUT OF STOCK","unit":"","received":0,"expiryDate":"2028-09-01","balance":0,"name":"Antalgex capsules","reorder":0,"location":"","issued":0,"opening":0},{"balance":0,"unit":"","status":"OUT OF STOCK","location":"","reorder":0,"opening":0,"received":0,"id":"D159","name":"Aspimed 75 mg TB","issued":0,"expiryDate":"2027-03-01"},{"name":"Atacand 16 mg TB","issued":0,"id":"D272","received":0,"unit":"","opening":0,"reorder":0,"status":"OUT OF STOCK","location":"","expiryDate":"2028-01-01","balance":0},{"unit":"","reorder":0,"opening":0,"balance":0,"id":"D271","received":0,"issued":0,"expiryDate":"2029-02-01","name":"Atacand 16 Plus","status":"OUT OF STOCK","location":""},{"location":"","balance":0,"reorder":0,"opening":0,"unit":"","status":"OUT OF STOCK","expiryDate":"2027-05-01","issued":0,"received":0,"name":"Fleming injection (Amoxicillin injection)","id":"D127"},{"reorder":0,"opening":0,"issued":0,"unit":"","balance":0,"location":"","name":"Forxiga 10 (dapagliflozin) mg","received":0,"status":"OUT OF STOCK","id":"D095","expiryDate":"2027-10-01"},{"name":"Gupisone 20 mg TB","status":"OUT OF STOCK","id":"D275","received":0,"issued":0,"unit":"","balance":0,"opening":0,"expiryDate":"2028-10-01","reorder":0,"location":""},{"expiryDate":"2027-11-11","reorder":0,"received":0,"opening":0,"balance":0,"unit":"","issued":0,"id":"D270","location":"","status":"OUT OF STOCK","name":"Neo Corteen eye/ear/nose drop"},{"expiryDate":"2027-05-01","unit":"","location":"","id":"D277","status":"OUT OF STOCK","balance":0,"issued":0,"reorder":0,"name":"Omeprazole 20 mg inj (Glenmark)","opening":0,"received":0},{"issued":0,"expiryDate":"2027-06-01","received":0,"name":"Pariet 20 mg TB","id":"D156","opening":0,"reorder":0,"location":"","unit":"","status":"OUT OF STOCK","balance":0},{"reorder":0,"received":0,"opening":0,"balance":0,"unit":"","issued":0,"location":"","expiryDate":"2028-06-01","id":"D266","status":"OUT OF STOCK","name":"Phloro G"},{"id":"D284","expiryDate":"2027-12-01","name":"Pulmicort 0.5 mg Nebules","status":"OUT OF STOCK","location":"","issued":0,"balance":0,"unit":"","opening":0,"reorder":0,"received":0},{"location":"","issued":0,"expiryDate":"2029-04-01","name":"Simple Linctus (Dannex cough) syrup","id":"D269","opening":0,"reorder":0,"received":0,"status":"OUT OF STOCK","unit":"","balance":0},{"unit":"","expiryDate":"2027-08-01","issued":0,"id":"D273","location":"","reorder":0,"name":"Skycef D/S","opening":0,"status":"OUT OF STOCK","balance":0,"received":0},{"location":"","name":"Symbicort 160/4.5","opening":0,"reorder":0,"issued":0,"balance":0,"id":"D137","status":"OUT OF STOCK","unit":"","received":0,"expiryDate":"2027-09-01"},{"issued":0,"name":"Tenofovir ( Tefolav) 300 mg","received":0,"opening":0,"reorder":0,"id":"D267","expiryDate":"2028-02-01","status":"OUT OF STOCK","location":"","unit":"","balance":0},{"unit":"","balance":0,"reorder":0,"opening":0,"id":"D268","status":"OUT OF STOCK","location":"","name":"Tenofovir (Mylan India) 300 mg","issued":0,"expiryDate":"2028-05-01","received":0},{"name":"Augmenti 228","opening":0,"issued":0,"id":"D313","reorder":0,"location":"","balance":0,"unit":"","expiryDate":"2027-06-01","received":0,"status":"OUT OF STOCK"},{"name":"Augmentin 457","id":"D312","received":0,"opening":0,"reorder":0,"issued":0,"balance":0,"expiryDate":"2027-06-01","unit":"","status":"OUT OF STOCK","location":""},{"status":"OUT OF STOCK","id":"D255","received":0,"name":"cyclogest 400","balance":0,"unit":"","issued":0,"expiryDate":"","location":"","opening":0,"reorder":0},{"opening":0,"reorder":0,"location":"","issued":0,"id":"D245","expiryDate":"2028-05-01","name":"E-Panol (Paracetamol ) syrup","balance":0,"received":0,"unit":"","status":"OUT OF STOCK"},{"status":"OUT OF STOCK","balance":0,"name":"Galvusmet  50/1000 mg Tb","location":"","expiryDate":"2027-07-01","opening":0,"reorder":0,"received":0,"id":"D295","unit":"","issued":0},{"opening":0,"reorder":0,"location":"","balance":0,"issued":0,"name":"Menthodex  cough mixture","expiryDate":"2029-02-01","id":"D303","status":"OUT OF STOCK","unit":"","received":0},{"balance":0,"unit":"","reorder":0,"opening":0,"received":0,"status":"OUT OF STOCK","issued":0,"name":"Phenoxymethylpenicillin Tablet","expiryDate":"2027-07-01","id":"D318","location":""},{"received":0,"id":"D280","unit":"","status":"OUT OF STOCK","balance":0,"expiryDate":"2030-03-01","issued":0,"location":"","reorder":0,"name":"Progynova 2MG","opening":0},{"name":"Tamsulosin Hydrochloride","received":0,"issued":0,"id":"D316","status":"OUT OF STOCK","location":"","unit":"","expiryDate":"2028-10-01","opening":0,"reorder":0,"balance":0},{"status":"OUT OF STOCK","location":"","name":"Troge Paracetamol Syrup","id":"D317","expiryDate":"2028-01-01","balance":0,"unit":"","issued":0,"opening":0,"received":0,"reorder":0},{"expiryDate":"2027-06-01","status":"OUT OF STOCK","unit":"","location":"","id":"D289","balance":0,"received":0,"reorder":0,"name":"Amaryl 2mg","opening":0,"issued":0},{"name":"Argesun Injection 30 mg","issued":0,"id":"D287","received":0,"expiryDate":"2027-03-01","status":"OUT OF STOCK","unit":"","opening":0,"reorder":0,"location":"","balance":0},{"status":"OUT OF STOCK","name":"Astymin Tonic 200 ml","location":"","expiryDate":"2028-01-01","id":"D297","balance":0,"received":0,"unit":"","issued":0,"opening":0,"reorder":0},{"balance":0,"unit":"","status":"OUT OF STOCK","location":"","id":"D292","reorder":0,"opening":0,"received":0,"name":"Ciprolex TZ (Ciprofloxacin) TB 600 MG","expiryDate":"2028-08-01","issued":0},{"status":"OUT OF STOCK","name":"Histazine syrup 60 ml","location":"","id":"D334","expiryDate":"2029-04-01","balance":0,"received":0,"unit":"","issued":0,"opening":0,"reorder":0},{"unit":"","reorder":0,"received":0,"opening":0,"balance":0,"issued":0,"location":"","status":"OUT OF STOCK","name":"Lady Forte","id":"D332","expiryDate":"2029-02-01"},{"opening":0,"reorder":0,"location":"","balance":0,"issued":0,"expiryDate":"2027-09-01","name":"Metoclopramide 5 mg (Ennogen) inj","status":"OUT OF STOCK","id":"D285","received":0,"unit":""},{"id":"D286","received":0,"opening":0,"reorder":0,"name":"Metoclopramide 5 mg (Hameln) inj","expiryDate":"2028-04-01","issued":0,"balance":0,"location":"","status":"OUT OF STOCK","unit":""},{"id":"D294","issued":0,"unit":"","received":0,"reorder":0,"opening":0,"name":"Proxeed Plus","location":"","expiryDate":"2028-02-01","balance":0,"status":"OUT OF STOCK"},{"location":"","opening":0,"reorder":0,"issued":0,"balance":0,"name":"Zathenza ( Benzathine ) injectoin","status":"OUT OF STOCK","expiryDate":"2028-08-01","received":0,"id":"D290","unit":""},{"received":0,"expiryDate":"2028-01-01","unit":"","issued":0,"reorder":0,"status":"OUT OF STOCK","opening":0,"location":"","id":"D326","balance":0,"name":"Citrizen Syrup ( Cetibed)"},{"status":"OUT OF STOCK","balance":0,"name":"Enacef (Cefuroxime) suspension 125 mg","location":"","opening":0,"reorder":0,"received":0,"id":"D252","unit":"","issued":0,"expiryDate":"2028-03-01"},{"unit":"","id":"D251","reorder":0,"received":0,"opening":0,"balance":0,"expiryDate":"2029-04-01","issued":0,"location":"","name":"Enafix 200 mg (cifixime) TB","status":"OUT OF STOCK"},{"status":"OUT OF STOCK","balance":0,"location":"","name":"Ferrous Sulphate TB 200 MG ECL","opening":0,"reorder":0,"received":0,"id":"D250","expiryDate":"2028-03-01","issued":0,"unit":""},{"unit":"","reorder":0,"opening":0,"expiryDate":"2028-10-01","location":"","balance":0,"id":"D329","issued":0,"name":"M2-Tone Tablet","status":"OUT OF STOCK","received":0},{"issued":0,"id":"D241","name":"Pepcer","location":"","opening":0,"reorder":0,"unit":"","expiryDate":"2028-12-01","status":"OUT OF STOCK","balance":0,"received":0},{"opening":0,"name":"Zoladex 3.6 injection","reorder":0,"expiryDate":"2028-01-01","issued":0,"received":0,"balance":0,"status":"OUT OF STOCK","unit":"","id":"D349","location":""},{"location":"","name":"Pethidine HCI injection (Fresenius","id":"D350","opening":0,"reorder":0,"issued":0,"balance":0,"unit":"","status":"OUT OF STOCK","received":0,"expiryDate":"2029-10-01"},{"id":"D308","received":0,"issued":0,"unit":"","expiryDate":"2027-04-01","reorder":0,"location":"","opening":0,"name":"Aerius Oral solution","balance":0,"status":"OUT OF STOCK"},{"opening":0,"issued":0,"reorder":0,"name":"Hydrocortisone cream 30 mg","id":"D345","received":0,"balance":0,"unit":"","status":"OUT OF STOCK","expiryDate":"2028-06-01","location":""},{"id":"D114","status":"OUT OF STOCK","balance":0,"location":"","expiryDate":"2028-10-01","name":"Kamaclox mouthwash 300 ml","opening":0,"reorder":0,"received":0,"unit":"","issued":0},{"reorder":0,"opening":0,"issued":0,"unit":"","received":0,"balance":0,"location":"","expiryDate":"2029-07-01","name":"Paracetamol TB 500 mg ECL","status":"OUT OF STOCK","id":"D343"},{"unit":"","balance":0,"id":"D339","status":"OUT OF STOCK","location":"","expiryDate":"2029-04-01","reorder":0,"opening":0,"received":0,"name":"Prontogest pess","issued":0},{"id":"D340","balance":0,"expiryDate":"2028-07-01","location":"","status":"OUT OF STOCK","unit":"","reorder":0,"opening":0,"received":0,"name":"Prontogest inj 100 mg","issued":0},{"received":0,"expiryDate":"2028-03-01","status":"OUT OF STOCK","name":"Tothema","id":"D258","issued":0,"balance":0,"location":"","opening":0,"reorder":0,"unit":""},{"received":0,"balance":0,"opening":0,"status":"OUT OF STOCK","reorder":0,"name":"Zitmycin TB  (Azithromycin) 50 mg","id":"D291","issued":0,"location":"","unit":"","expiryDate":"2026-10-01"},{"id":"D043","issued":0,"received":0,"unit":"","reorder":0,"opening":0,"location":"","expiryDate":"2028-05-01","name":"Betahistine 8 mg TB","balance":0,"status":"OUT OF STOCK"},{"reorder":0,"location":"","opening":0,"balance":0,"unit":"","issued":0,"expiryDate":"2028-03-01","received":0,"status":"OUT OF STOCK","id":"D042","name":"Dulcolax 40 mg TB"},{"location":"","reorder":0,"opening":0,"balance":0,"unit":"","issued":0,"received":0,"status":"OUT OF STOCK","expiryDate":"2027-06-01","name":"Topamax 25","id":"D040"},{"issued":0,"name":"Topiramate 25 mg","expiryDate":"2027-12-01","location":"","id":"D041","unit":"","opening":0,"reorder":0,"received":0,"status":"OUT OF STOCK","balance":0},{"opening":0,"issued":0,"reorder":0,"name":"Episopt 5 ml eye drop","received":0,"balance":0,"unit":"","status":"OUT OF STOCK","id":"D257","location":"","expiryDate":"2028-08-01"},{"unit":"","reorder":0,"opening":0,"location":"","id":"D046","issued":0,"balance":0,"name":"Normal Saline Nasal Drops 10 ml","expiryDate":"2027-06-01","received":0,"status":"OUT OF STOCK"},{"unit":"","status":"OUT OF STOCK","location":"","balance":0,"issued":0,"name":"Nostamine eye/nose Drops 10 ml","reorder":0,"expiryDate":"2028-11-01","opening":0,"received":0,"id":"D044"},{"expiryDate":"2028-07-07","status":"OUT OF STOCK","received":0,"name":"Atacand 8 mg TB","id":"D056","issued":0,"balance":0,"opening":0,"unit":"","reorder":0,"location":""},{"opening":0,"received":0,"reorder":0,"id":"D055","name":"Avamys Uk 120 Suspension","issued":0,"balance":0,"location":"","status":"OUT OF STOCK","expiryDate":"2027-08-01","unit":""},{"unit":"","received":0,"status":"OUT OF STOCK","id":"D230","name":"Eyecopen Forte Capsules","balance":0,"issued":0,"reorder":0,"expiryDate":"2027-06-01","opening":0,"location":""},{"id":"D298","name":"Otrivin Nasal Drops 10 ml Adult","issued":0,"received":0,"status":"OUT OF STOCK","opening":0,"reorder":0,"unit":"","expiryDate":"2028-07-01","location":"","balance":0},{"balance":0,"received":0,"status":"OUT OF STOCK","unit":"","reorder":0,"expiryDate":"2027-09-01","opening":0,"location":"","name":"Prednisolone eye suspension","id":"D229","issued":0},{"opening":0,"id":"D305","reorder":0,"issued":0,"name":"Amlodenk 10 mg","location":"","balance":0,"unit":"","received":0,"status":"OUT OF STOCK","expiryDate":"2027-06-01"},{"opening":0,"expiryDate":"2027-02-02","reorder":0,"issued":0,"name":"Natrilix 1.5 mg","received":0,"balance":0,"id":"D028","status":"OUT OF STOCK","location":"","unit":""},{"balance":0,"received":0,"status":"OUT OF STOCK","expiryDate":"2027-11-01","reorder":0,"unit":"","opening":0,"location":"","issued":0,"id":"D032","name":"Rivaroxaban 10 mg"},{"opening":0,"issued":0,"reorder":0,"location":"","name":"Rivaroxaban 15 mg","balance":0,"received":0,"unit":"","status":"OUT OF STOCK","expiryDate":"2027-04-01","id":"D033"},{"issued":0,"opening":0,"reorder":0,"name":"Rivaroxaban 20 mg Tab","received":0,"balance":0,"location":"","unit":"","id":"D031","status":"OUT OF STOCK","expiryDate":"2027-05-01"},{"issued":0,"unit":"","expiryDate":"2027-09-01","received":0,"reorder":0,"opening":0,"name":"Spironolactone 50 mg","location":"","status":"OUT OF STOCK","balance":0,"id":"D034"},{"status":"OUT OF STOCK","balance":0,"name":"Vitamin B denk","opening":0,"location":"","expiryDate":"2028-01-01","reorder":0,"unit":"","issued":0,"id":"D030","received":0},{"issued":0,"location":"","name":"Ciprolex  Eye/Ear drop","expiryDate":"2027-11-01","opening":0,"reorder":0,"id":"D330","status":"OUT OF STOCK","unit":"","balance":0,"received":0},{"status":"OUT OF STOCK","expiryDate":"2028-01-01","location":"","name":"Clopidogrel 75 mg","balance":0,"received":0,"issued":0,"opening":0,"unit":"","reorder":0,"id":"D037"},{"name":"Furosemide 40 mg TB","balance":0,"location":"","status":"OUT OF STOCK","opening":0,"reorder":0,"issued":0,"id":"D039","expiryDate":"2027-08-01","received":0,"unit":""},{"status":"OUT OF STOCK","unit":"","received":0,"expiryDate":"2028-05-01","balance":0,"name":"Tranexamic 500 mg TB","reorder":0,"location":"","issued":0,"id":"D038","opening":0},{"location":"","expiryDate":"2028-12-01","balance":0,"opening":0,"status":"OUT OF STOCK","reorder":0,"name":"Benylin Infant cough syrup ( 3 months+)","id":"D051","issued":0,"received":0,"unit":""},{"status":"OUT OF STOCK","received":0,"name":"Hydrogen Peroxide 200 ml ECL","id":"D327","balance":0,"expiryDate":"2029-07-01","unit":"","issued":0,"opening":0,"location":"","reorder":0},{"received":0,"unit":"","status":"OUT OF STOCK","issued":0,"name":"Magnesium Trisilicate 200 ml (MMT)","id":"D053","balance":0,"expiryDate":"2028-04-01","location":"","reorder":0,"opening":0},{"reorder":0,"received":0,"opening":0,"balance":0,"unit":"","issued":0,"id":"D052","location":"","expiryDate":"2028-02-01","status":"OUT OF STOCK","name":"Prematogest 250 mg (premolote)"},{"expiryDate":"2028-09-01","status":"OUT OF STOCK","received":0,"name":"Lisinopril 10 mg","balance":0,"issued":0,"location":"","opening":0,"unit":"","reorder":0,"id":"D019"},{"issued":0,"opening":0,"reorder":0,"name":"Methyldopa 250 (Pharm -inter) TB","balance":0,"received":0,"unit":"","status":"OUT OF STOCK","location":"","expiryDate":"2029-03-01","id":"D228"},{"unit":"","id":"D016","location":"","status":"OUT OF STOCK","name":"Methyldopa 250 mg","balance":0,"issued":0,"expiryDate":"2027-06-01","reorder":0,"opening":0,"received":0},{"location":"","balance":0,"opening":0,"status":"OUT OF STOCK","reorder":0,"name":"Methyldopa 500 mg TB","received":0,"issued":0,"id":"D017","unit":"","expiryDate":"2028-02-01"},{"status":"OUT OF STOCK","received":0,"balance":0,"name":"Xarelto 10 mg TB","opening":0,"reorder":0,"expiryDate":"2028-02-01","id":"D018","unit":"","location":"","issued":0},{"name":"Xarelto 15 mg TB","opening":0,"reorder":0,"issued":0,"balance":0,"id":"D260","received":0,"status":"OUT OF STOCK","unit":"","location":"","expiryDate":"2028-02-01"},{"received":0,"issued":0,"unit":"","id":"D261","expiryDate":"2028-05-25","reorder":0,"location":"","opening":0,"name":"Xarelto 20 mg TB","balance":0,"status":"OUT OF STOCK"},{"received":0,"balance":0,"reorder":0,"opening":0,"unit":"","status":"OUT OF STOCK","issued":0,"location":"","id":"D027","name":"Exforge 10/160/12.5 mg","expiryDate":"2028-03-01"},{"issued":0,"id":"D035","name":"Exforge 10/320/25","location":"","opening":0,"expiryDate":"2028-04-01","reorder":0,"unit":"","status":"OUT OF STOCK","received":0,"balance":0},{"received":0,"unit":"","issued":0,"expiryDate":"2027-01-01","reorder":0,"status":"OUT OF STOCK","opening":0,"id":"D026","location":"","balance":0,"name":"Exforge 5/160/12.5 mg"},{"unit":"","id":"D025","reorder":0,"opening":0,"balance":0,"location":"","issued":0,"name":"Lipitor 10 mg","expiryDate":"2028-02-01","status":"OUT OF STOCK","received":0},{"expiryDate":"2028-07-01","status":"OUT OF STOCK","location":"","name":"Lipitor 20 mg","issued":0,"balance":0,"opening":0,"id":"D021","reorder":0,"received":0,"unit":""},{"expiryDate":"2028-03-01","status":"OUT OF STOCK","name":"Lipitor 40 mg","received":0,"issued":0,"id":"D022","balance":0,"opening":0,"reorder":0,"location":"","unit":""},{"name":"Norvasc 10 mg","opening":0,"received":0,"reorder":0,"issued":0,"balance":0,"id":"D023","status":"OUT OF STOCK","location":"","unit":"","expiryDate":"2027-06-06"},{"received":0,"name":"Norvasc 5 mg","expiryDate":"2027-03-01","balance":0,"status":"OUT OF STOCK","opening":0,"id":"D024","reorder":0,"issued":0,"unit":"","location":""},{"id":"D048","location":"","name":"Celebrex 200 mg 100's","issued":0,"status":"OUT OF STOCK","opening":0,"reorder":0,"unit":"","balance":0,"received":0,"expiryDate":"2028-05-05"},{"received":0,"balance":0,"status":"OUT OF STOCK","unit":"","reorder":0,"expiryDate":"2029-04-04","opening":0,"id":"D054","location":"","name":"Corsodyl mouth wash","issued":0},{"location":"","unit":"","reorder":0,"opening":0,"expiryDate":"2028-01-01","balance":0,"issued":0,"id":"D050","status":"OUT OF STOCK","received":0,"name":"Lyrica 25 mg"},{"name":"Carbimazole 5 mg TB (UK)","balance":0,"status":"OUT OF STOCK","opening":0,"reorder":0,"id":"D009","received":0,"issued":0,"unit":"","expiryDate":"2027-11-01","location":""},{"unit":"","status":"OUT OF STOCK","location":"","balance":0,"issued":0,"reorder":0,"id":"D004","opening":0,"received":0,"expiryDate":"2027-09-01","name":"Dostinex 0,5 mg TB"},{"location":"","opening":0,"reorder":0,"id":"D006","name":"Doxycycline 100 mg","issued":0,"balance":0,"status":"OUT OF STOCK","expiryDate":"2028-09-01","received":0,"unit":""},{"status":"OUT OF STOCK","name":"Inoxime 200 mg (Cefixime) TB","id":"D005","balance":0,"location":"","opening":0,"reorder":0,"unit":"","received":0,"expiryDate":"2029-01-01","issued":0},{"name":"Levothyroxine 100 mg (accord)","id":"D001","status":"OUT OF STOCK","location":"","unit":"","issued":0,"balance":0,"expiryDate":"2027-01-01","opening":0,"reorder":0,"received":0},{"unit":"","issued":0,"location":"","reorder":0,"opening":0,"name":"Metronidazole 400 mg TB","id":"D007","received":0,"status":"OUT OF STOCK","balance":0,"expiryDate":"2028-08-01"},{"expiryDate":"2027-07-01","issued":0,"location":"","id":"D008","name":"Terbinafine 250 mg TB","opening":0,"reorder":0,"received":0,"unit":"","status":"OUT OF STOCK","balance":0},{"balance":0,"received":0,"opening":0,"status":"OUT OF STOCK","reorder":0,"name":"Ventolin evohaler 100 mg","expiryDate":"2027-10-01","issued":0,"id":"D002","location":"","unit":""},{"opening":0,"reorder":0,"location":"","issued":0,"id":"D003","name":"Zithromax oral capsule 250 mg","balance":0,"received":0,"unit":"","status":"OUT OF STOCK","expiryDate":"2027-01-01"},{"unit":"","reorder":0,"received":0,"opening":0,"expiryDate":"2028-09-01","balance":0,"issued":0,"location":"","id":"D015","status":"OUT OF STOCK","name":"Amitriptyline 25 mg TB"},{"unit":"","reorder":0,"location":"","opening":0,"issued":0,"id":"D013","balance":0,"expiryDate":"2028-09-01","name":"Evoxil 500 mg (levofloxacin) TB","received":0,"status":"OUT OF STOCK"},{"received":0,"status":"OUT OF STOCK","balance":0,"opening":0,"reorder":0,"name":"Flucloxacillin Capsules 500 mg","location":"","issued":0,"unit":"","expiryDate":"2027-10-01","id":"D012"},{"issued":0,"expiryDate":"2028-05-01","name":"Thiamine Hydrochloride 100 mg TB","received":0,"opening":0,"reorder":0,"unit":"","status":"OUT OF STOCK","location":"","balance":0,"id":"D010"},{"expiryDate":"2028-07-01","unit":"","location":"","status":"OUT OF STOCK","received":0,"issued":0,"balance":0,"name":"Thiamine Hydrochloride 500 mg TB","id":"D011","reorder":0,"opening":0},{"status":"OUT OF STOCK","received":0,"name":"Flucloxacillin Suspension","balance":0,"id":"D047","expiryDate":"2029-04-04","opening":0,"reorder":0,"unit":"","location":"","issued":0},{"status":"OUT OF STOCK","expiryDate":"2028-10-01","name":"Biopentin (Gabapentin) 300 mg TB","received":0,"id":"D058","unit":"","balance":0,"issued":0,"location":"","opening":0,"reorder":0},{"received":0,"status":"OUT OF STOCK","name":"Coartem 80/480 (Artemeter lumefantrine) TB","balance":0,"location":"","expiryDate":"2027-10-01","issued":0,"opening":0,"id":"D057","unit":"","reorder":0},{"name":"Dexamethasone 4mg TB 1000's Dexatore","issued":0,"received":0,"status":"OUT OF STOCK","unit":"","opening":0,"id":"D324","reorder":0,"location":"","expiryDate":"2027-06-01","balance":0},{"unit":"","id":"D060","status":"OUT OF STOCK","location":"","name":"Diazepam 10 mg TB","expiryDate":"2030-07-01","issued":0,"balance":0,"reorder":0,"opening":0,"received":0},{"reorder":0,"unit":"","opening":0,"location":"","expiryDate":"2027-03-01","issued":0,"id":"D059","balance":0,"name":"Dispersible Aspirin TB 75 mg","received":0,"status":"OUT OF STOCK"},{"expiryDate":"2028-10-01","location":"","status":"OUT OF STOCK","unit":"","balance":0,"received":0,"id":"D061","reorder":0,"issued":0,"name":"Gyno Mycolex ( Miconazole 400 mg ) Pessaries","opening":0},{"name":"Mycocort (Miconazole Cream) 20 mg","status":"OUT OF STOCK","received":0,"issued":0,"unit":"","balance":0,"opening":0,"reorder":0,"location":"","id":"D064","expiryDate":"2028-09-01"},{"balance":0,"status":"OUT OF STOCK","unit":"","reorder":0,"location":"","opening":0,"name":"Plavix (clopidogrel) 75 mg","expiryDate":"2028-06-01","received":0,"id":"D063","issued":0},{"name":"Anusol Suppositories","location":"","id":"D098","issued":0,"unit":"","status":"OUT OF STOCK","expiryDate":"2027-11-01","opening":0,"received":0,"reorder":0,"balance":0},{"reorder":0,"expiryDate":"2027-04-01","opening":0,"received":0,"issued":0,"unit":"","balance":0,"location":"","id":"D099","name":"Atorvastatin 10 mg TAB","status":"OUT OF STOCK"},{"status":"OUT OF STOCK","location":"","balance":0,"name":"Atorvastatin 20 mg","opening":0,"reorder":0,"id":"D100","unit":"","received":0,"issued":0,"expiryDate":"2027-01-01"},{"issued":0,"name":"Atorvastatin 40 mg","expiryDate":"2028-11-01","id":"D101","received":0,"opening":0,"reorder":0,"unit":"","status":"OUT OF STOCK","location":"","balance":0},{"expiryDate":"2027-12-01","unit":"","status":"OUT OF STOCK","location":"","balance":0,"id":"D119","name":"Celemin 500 ml (Amino Acid)","issued":0,"reorder":0,"received":0,"opening":0},{"expiryDate":"2028-03-01","location":"","issued":0,"name":"Enafix (cefixime suspension) 100 mg","id":"D254","status":"OUT OF STOCK","opening":0,"reorder":0,"unit":"","balance":0,"received":0},{"name":"Mist Pot Cit","balance":0,"status":"OUT OF STOCK","id":"D120","opening":0,"reorder":0,"received":0,"expiryDate":"","issued":0,"unit":"","location":""},{"name":"Osteocare Liquid","id":"D122","received":0,"issued":0,"expiryDate":"2026-10-01","unit":"","status":"OUT OF STOCK","location":"","opening":0,"reorder":0,"balance":0},{"received":0,"balance":0,"reorder":0,"opening":0,"unit":"","status":"OUT OF STOCK","id":"D121","expiryDate":"2028-10-01","location":"","issued":0,"name":"Tixylix Infant cough syrup 3 months+"},{"location":"","expiryDate":"2028-09-01","opening":0,"name":"Wellwomam Max","reorder":0,"issued":0,"balance":0,"status":"OUT OF STOCK","unit":"","received":0,"id":"D118"},{"location":"","reorder":0,"opening":0,"expiryDate":"2030-09-01","balance":0,"unit":"","issued":0,"received":0,"status":"OUT OF STOCK","id":"D065","name":"Duphaston (Dydrogesterone)"},{"status":"OUT OF STOCK","name":"Microgynon 30 TB","id":"D066","received":0,"balance":0,"expiryDate":"2029-07-01","opening":0,"reorder":0,"unit":"","location":"","issued":0},{"balance":0,"received":0,"id":"D067","status":"OUT OF STOCK","unit":"","reorder":0,"opening":0,"expiryDate":"2027-10-01","location":"","name":"Polygynax Capsules 12's","issued":0},{"reorder":0,"opening":0,"issued":0,"received":0,"balance":0,"unit":"","location":"","id":"D068","expiryDate":"2027-06-01","status":"OUT OF STOCK","name":"Polygynax Capsules 6's"},{"unit":"","id":"D069","issued":0,"location":"","name":"Wellman Original","status":"OUT OF STOCK","reorder":0,"expiryDate":"2028-04-01","opening":0,"received":0,"balance":0},{"received":0,"issued":0,"expiryDate":"2029-02-01","name":"Micardis (Telmisartan/amlodipine ) TB","location":"","status":"OUT OF STOCK","opening":0,"reorder":0,"balance":0,"id":"D299","unit":""},{"location":"","expiryDate":"2027-08-01","name":"Prednisolone 5mg TB accord UK","opening":0,"reorder":0,"issued":0,"balance":0,"id":"D097","status":"OUT OF STOCK","unit":"","received":0},{"name":"Sildenafil 100 mg","opening":0,"location":"","reorder":0,"issued":0,"balance":0,"expiryDate":"2030-10-01","id":"D093","status":"OUT OF STOCK","received":0,"unit":""},{"reorder":0,"opening":0,"issued":0,"location":"","balance":0,"unit":"","expiryDate":"2030-08-01","status":"OUT OF STOCK","name":"Sildenafil 50 mg","received":0,"id":"D092"},{"unit":"","location":"","expiryDate":"2028-04-01","issued":0,"status":"OUT OF STOCK","reorder":0,"name":"Twynsta TB","opening":0,"id":"D094","balance":0,"received":0},{"location":"","name":"Isoflurane I.P (isifrane) 250 Liquid","opening":0,"reorder":0,"id":"D115","issued":0,"balance":0,"status":"OUT OF STOCK","unit":"","received":0,"expiryDate":"2030-03-01"},{"status":"OUT OF STOCK","balance":0,"name":"Sevofor 250 Liquid","expiryDate":"2029-12-01","location":"","opening":0,"reorder":0,"id":"D116","unit":"","received":0,"issued":0},{"unit":"","balance":0,"id":"D337","status":"OUT OF STOCK","location":"","reorder":0,"expiryDate":"","opening":0,"name":"Simple linctus Adult","received":0,"issued":0},{"reorder":0,"unit":"","location":"","opening":0,"issued":0,"balance":0,"id":"D347","name":"Simple Linctus Adult (Propharm) 100 ml","received":0,"expiryDate":"2029-04-01","status":"OUT OF STOCK"},{"issued":0,"name":"Simple linctus Paed","location":"","opening":0,"reorder":0,"expiryDate":"","status":"OUT OF STOCK","received":0,"unit":"","id":"D338","balance":0},{"received":0,"status":"OUT OF STOCK","id":"D346","unit":"","balance":0,"location":"","name":"Simple Linctus Paediatric (Propharm) 100 ml","reorder":0,"opening":0,"issued":0,"expiryDate":"2029-05-01"},{"id":"D319","opening":0,"reorder":0,"issued":0,"name":"Sodium Bicarbonate Caps 500 mg 56's","expiryDate":"2028-06-01","location":"","balance":0,"unit":"","received":0,"status":"OUT OF STOCK"},{"balance":0,"location":"","reorder":0,"opening":0,"unit":"","status":"OUT OF STOCK","received":0,"expiryDate":"2027-09-01","id":"D111","issued":0,"name":"Vitafol Vitamins capsules"},{"id":"D090","reorder":0,"expiryDate":"2028-06-01","opening":0,"unit":"","balance":0,"received":0,"issued":0,"status":"OUT OF STOCK","location":"","name":"Clomid 50mg TB"},{"balance":0,"expiryDate":"2029-02-02","location":"","status":"OUT OF STOCK","reorder":0,"unit":"","opening":0,"received":0,"issued":0,"id":"D083","name":"Cytotec 200 TB"},{"issued":0,"expiryDate":"2029-02-01","received":0,"id":"D091","unit":"","reorder":0,"opening":0,"location":"","name":"Metoclopramide 10 mg ECL","balance":0,"status":"OUT OF STOCK"},{"location":"","status":"OUT OF STOCK","name":"Nifecard XL 30 mg TB","received":0,"issued":0,"id":"D076","balance":0,"opening":0,"reorder":0,"unit":"","expiryDate":"2029-03-01"},{"status":"OUT OF STOCK","name":"Phlebodia 600 mg  TB","id":"D089","received":0,"unit":"","expiryDate":"2030-09-01","balance":0,"issued":0,"opening":0,"location":"","reorder":0},{"name":"Bonjela Gel (16yrs +)","location":"","status":"OUT OF STOCK","expiryDate":"2027-07-01","id":"D081","issued":0,"unit":"","received":0,"balance":0,"opening":0,"reorder":0},{"name":"Bonjela Gel (6+ months)","opening":0,"received":0,"reorder":0,"issued":0,"balance":0,"expiryDate":"2029-01-01","id":"D080","status":"OUT OF STOCK","location":"","unit":""},{"id":"D079","opening":0,"reorder":0,"name":"Dermovate Cream 30 mg","balance":0,"issued":0,"location":"","expiryDate":"2027-05-01","status":"OUT OF STOCK","unit":"","received":0},{"expiryDate":"2028-08-01","location":"","issued":0,"name":"Differin gel 50g","status":"OUT OF STOCK","id":"D077","opening":0,"reorder":0,"balance":0,"unit":"","received":0},{"unit":"","issued":0,"id":"D078","expiryDate":"2028-08-01","received":0,"reorder":0,"name":"Differin gel 30 mg","opening":0,"location":"","status":"OUT OF STOCK","balance":0},{"status":"OUT OF STOCK","name":"Elocom Cream 1G","location":"","id":"D082","unit":"","balance":0,"expiryDate":"2027-09-01","issued":0,"opening":0,"received":0,"reorder":0},{"unit":"","status":"OUT OF STOCK","location":"","balance":0,"issued":0,"reorder":0,"expiryDate":"2027-08-01","opening":0,"received":0,"id":"D075","name":"Permethrin 5% Cream 30 mg"},{"status":"OUT OF STOCK","balance":0,"location":"","name":"Bells Paraffin Liquid 150mL","opening":0,"reorder":0,"id":"D109","received":0,"expiryDate":"2028-11-01","issued":0,"unit":""},{"received":0,"opening":0,"reorder":0,"balance":0,"issued":0,"name":"Bells Vitamin C Syrup (6 months+)","location":"","status":"OUT OF STOCK","id":"D110","unit":"","expiryDate":"2028-01-01"},{"issued":0,"name":"Clotrimazole Vaginal Cream 30 mg","received":0,"opening":0,"reorder":0,"expiryDate":"2028-03-01","status":"OUT OF STOCK","location":"","id":"D296","unit":"","balance":0},{"received":0,"name":"Amikacin Sulphate injection 500 mg","balance":0,"status":"OUT OF STOCK","opening":0,"reorder":0,"issued":0,"id":"D070","unit":"","location":"","expiryDate":"2028-03-01"},{"status":"OUT OF STOCK","name":"Bupivacaine 0.5% injection 5's","received":0,"id":"D087","issued":0,"expiryDate":"2028-11-01","balance":0,"opening":0,"unit":"","reorder":0,"location":""},{"received":0,"name":"Furosemide 10 mg injection.(Accord)","balance":0,"status":"OUT OF STOCK","opening":0,"reorder":0,"issued":0,"id":"D088","expiryDate":"2027-12-01","unit":"","location":""},{"received":0,"expiryDate":"2028-04-01","unit":"","status":"OUT OF STOCK","balance":0,"issued":0,"reorder":0,"opening":0,"id":"D071","location":"","name":"Clexane 40 mg injection (10's )"},{"status":"OUT OF STOCK","received":0,"id":"D141","name":"Clexane 40 mg injection 2's","location":"","expiryDate":"2027-12-01","balance":0,"unit":"","issued":0,"opening":0,"reorder":0},{"issued":0,"location":"","expiryDate":"2028-02-01","name":"Heparin Injection","opening":0,"reorder":0,"unit":"","received":0,"status":"OUT OF STOCK","id":"D074","balance":0},{"unit":"","reorder":0,"id":"D073","opening":0,"issued":0,"location":"","balance":0,"expiryDate":"2027-05-01","name":"Hydralazine Hydrochloride Injection 20 mg (ALPA)","status":"OUT OF STOCK","received":0},{"expiryDate":"2027-08-01","status":"OUT OF STOCK","unit":"","received":0,"id":"D072","balance":0,"name":"Kenadion 10 mg injection (Phytomenadione) 25's","reorder":0,"location":"","issued":0,"opening":0},{"expiryDate":"2027-04-01","issued":0,"received":0,"name":"Atropine Sulphate injection (Tropine)","status":"OUT OF STOCK","id":"D105","opening":0,"reorder":0,"location":"","balance":0,"unit":""},{"received":0,"unit":"","issued":0,"id":"D106","expiryDate":"2027-07-01","reorder":0,"status":"OUT OF STOCK","opening":0,"balance":0,"location":"","name":"Dexadran Injection (Dexamethasone)#"},{"unit":"","received":0,"balance":0,"reorder":0,"id":"D102","opening":0,"status":"OUT OF STOCK","name":"Gabapentin 300 mg capsules","issued":0,"location":"","expiryDate":"2028-12-01"},{"balance":0,"status":"OUT OF STOCK","id":"D104","unit":"","reorder":0,"location":"","opening":0,"received":0,"expiryDate":"2028-03-01","name":"Hyoscine Butyl Bromide injection 20 mg","issued":0},{"expiryDate":"2028-10-01","received":0,"unit":"","status":"OUT OF STOCK","location":"","balance":0,"issued":0,"reorder":0,"opening":0,"id":"D107","name":"Morphine Injection (hills)"},{"status":"OUT OF STOCK","received":0,"name":"Vancomycin Hydrochloride injection (VANCOCIP)","id":"D103","issued":0,"expiryDate":"2027-10-01","balance":0,"opening":0,"reorder":0,"unit":"","location":""},{"expiryDate":"2028-05-01","balance":0,"location":"","name":"Zinnacef  Injection 750 MG (Cefuroxime)","status":"OUT OF STOCK","opening":0,"reorder":0,"issued":0,"received":0,"unit":"","id":"D331"},{"expiryDate":"2028-06-01","balance":0,"reorder":0,"unit":"","id":"D132","opening":0,"received":0,"status":"OUT OF STOCK","issued":0,"name":"Folic Acid (accord) 5mg TB","location":""},{"unit":"","received":0,"issued":0,"id":"D131","name":"Folic Acid (Flamingo) 5mg TB","status":"OUT OF STOCK","reorder":0,"expiryDate":"2027-04-01","opening":0,"location":"","balance":0},{"opening":0,"issued":0,"reorder":0,"name":"Folic Acid ECL 5 mg TB","received":0,"balance":0,"expiryDate":"2027-08-01","id":"D130","location":"","unit":"","status":"OUT OF STOCK"},{"unit":"","balance":0,"location":"","reorder":0,"expiryDate":"2028-05-01","opening":0,"status":"OUT OF STOCK","id":"D136","received":0,"issued":0,"name":"Diazepam injection 10mg (Atlantic)"},{"location":"","unit":"","status":"OUT OF STOCK","received":0,"balance":0,"issued":0,"reorder":0,"opening":0,"name":"Hydrocortisone Cream 15%","expiryDate":"2031-02-01","id":"D135"},{"unit":"","location":"","issued":0,"id":"D133","reorder":0,"opening":0,"name":"Motilium TB 10 mg","received":0,"expiryDate":"2028-04-01","status":"OUT OF STOCK","balance":0},{"opening":0,"reorder":0,"issued":0,"received":0,"name":"Propofol inj 200 mg 5's","id":"D307","balance":0,"location":"","unit":"","status":"OUT OF STOCK","expiryDate":"2028-04-01"},{"expiryDate":"2028-08-01","id":"D134","status":"OUT OF STOCK","name":"Skycef 250 mg (cefuroxime) TB","location":"","issued":0,"balance":0,"opening":0,"unit":"","reorder":0,"received":0},{"reorder":0,"unit":"","opening":0,"location":"","issued":0,"expiryDate":"2028-06-01","balance":0,"id":"D263","name":"Tramadol caps 100 mg (TADOL)","received":0,"status":"OUT OF STOCK"},{"unit":"","reorder":0,"id":"D192","opening":0,"location":"","issued":0,"expiryDate":"2028-03-01","balance":0,"name":"Adrenaline injection 1MG","received":0,"status":"OUT OF STOCK"},{"unit":"","location":"","id":"D311","reorder":0,"opening":0,"balance":0,"issued":0,"name":"Ampicillin injection (TROGE)","status":"OUT OF STOCK","received":0,"expiryDate":"2028-03-01"},{"issued":0,"unit":"","location":"","reorder":0,"id":"D265","opening":0,"received":0,"name":"Ephedrine Injection 50 mg 1's","balance":0,"status":"OUT OF STOCK","expiryDate":"2030-09-01"},{"reorder":0,"opening":0,"issued":0,"unit":"","id":"D193","location":"","balance":0,"expiryDate":"2028-10-01","name":"Noradrenaline injection 4 MG","status":"OUT OF STOCK","received":0},{"reorder":0,"location":"","opening":0,"issued":0,"unit":"","balance":0,"id":"D321","received":0,"name":"Propofol injection 10 mg","status":"OUT OF STOCK","expiryDate":"2027-11-01"},{"expiryDate":"2027-09-01","status":"OUT OF STOCK","location":"","name":"Chlorpromazine injection. Cezocalm 50 mg","issued":0,"balance":0,"opening":0,"reorder":0,"received":0,"id":"D126","unit":""},{"unit":"","status":"OUT OF STOCK","id":"D123","received":0,"name":"Depo Medrol 40mg Suspension(methylprednisolone)","balance":0,"expiryDate":"2027-09-01","reorder":0,"issued":0,"location":"","opening":0},{"unit":"","id":"D129","received":0,"status":"OUT OF STOCK","name":"Hydrocortisone injection 100mg","balance":0,"issued":0,"expiryDate":"2026-12-12","location":"","reorder":0,"opening":0},{"location":"","opening":0,"reorder":0,"issued":0,"name":"Naloxone injection 400mg","balance":0,"id":"D124","status":"OUT OF STOCK","received":0,"unit":"","expiryDate":"2028-10-01"},{"location":"","opening":0,"reorder":0,"expiryDate":"2028-04-01","issued":0,"balance":0,"name":"Progesterone injection 100mg (Gestone)","status":"OUT OF STOCK","id":"D128","received":0,"unit":""},{"location":"","name":"Gleron meropenem  1G","balance":0,"status":"OUT OF STOCK","opening":0,"reorder":0,"expiryDate":"2028-09-01","issued":0,"unit":"","id":"D138","received":0},{"status":"OUT OF STOCK","unit":"","expiryDate":"2029-04-01","location":"","balance":0,"name":"Morphine injection 10 mg (Atlantic)","received":0,"reorder":0,"issued":0,"opening":0,"id":"D140"},{"received":0,"unit":"","status":"OUT OF STOCK","expiryDate":"2028-11-01","balance":0,"issued":0,"reorder":0,"id":"D276","opening":0,"location":"","name":"Omeprazole Sodium inj 40 mg (HABIMEZ)"},{"location":"","opening":0,"reorder":0,"issued":0,"balance":0,"name":"Pethidine injection 100 mg (Atlantic)","status":"OUT OF STOCK","id":"D139","received":0,"unit":"","expiryDate":"2030-09-01"},{"balance":0,"location":"","status":"OUT OF STOCK","unit":"","reorder":0,"id":"D293","opening":0,"received":0,"expiryDate":"2027-09-01","name":"Exaflox ( Flucoxacillin ) inj 500 mg","issued":0},{"issued":0,"name":"Magnesium Sulfate 50%  solution for inj 50's","id":"D143","location":"","unit":"","opening":0,"reorder":0,"status":"OUT OF STOCK","expiryDate":"2028-01-01","balance":0,"received":0},{"issued":0,"name":"Ondansetron Hydrochloride inj","received":0,"status":"OUT OF STOCK","opening":0,"id":"D256","reorder":0,"location":"","balance":0,"unit":"","expiryDate":"2027-12-01"},{"issued":0,"name":"Tranexamic injection 500 mg","location":"","id":"D142","opening":0,"reorder":0,"unit":"","expiryDate":"2028-10-01","status":"OUT OF STOCK","received":0,"balance":0},{"opening":0,"reorder":0,"issued":0,"expiryDate":"2028-10-01","received":0,"name":"TroAmoxiclav 1200 mg injection","id":"D144","balance":0,"unit":"","status":"OUT OF STOCK","location":""},{"expiryDate":"2027-04-01","status":"OUT OF STOCK","received":0,"name":"Actos 15 mg TB","id":"D323","issued":0,"balance":0,"opening":0,"reorder":0,"unit":"","location":""},{"received":0,"balance":0,"unit":"","reorder":0,"opening":0,"status":"OUT OF STOCK","expiryDate":"2028-09-01","issued":0,"location":"","name":"Allopurinol 100 mg  TB 28's","id":"D320"},{"location":"","status":"OUT OF STOCK","balance":0,"expiryDate":"2028-11-01","name":"Nexium Sachets","id":"D279","opening":0,"reorder":0,"received":0,"unit":"","issued":0},{"opening":0,"reorder":0,"issued":0,"name":"Acupan (Nefopam) 20 mg","balance":0,"received":0,"id":"D314","expiryDate":"2028-02-01","status":"OUT OF STOCK","location":"","unit":""},{"status":"OK","location":"H-2-2","name":"Amoxicillin Capsules 500 mg UK","id":"D186","received":250,"balance":50,"expiryDate":"2028-01-01","unit":"Packs","issued":200,"opening":0,"reorder":0},{"location":"","status":"OUT OF STOCK","name":"Glimepiride 2 mg TB Teva","expiryDate":"2028-01-01","id":"D157","issued":0,"received":0,"balance":0,"opening":0,"unit":"","reorder":0},{"id":"D161","unit":"","received":0,"issued":0,"reorder":0,"expiryDate":"2027-12-01","status":"OUT OF STOCK","opening":0,"location":"","balance":0,"name":"Losprino 75 mg"},{"location":"","issued":0,"id":"D231","name":"Rabeprazole Sodium 20 mg TB","expiryDate":"2027-04-01","status":"OUT OF STOCK","opening":0,"reorder":0,"unit":"","balance":0,"received":0},{"opening":0,"issued":0,"reorder":0,"name":"femtom Capsules","received":0,"id":"D233","expiryDate":"2028-06-01","balance":0,"unit":"","location":"","status":"OUT OF STOCK"},{"received":0,"status":"OUT OF STOCK","balance":0,"id":"D278","name":"Fybogel","opening":0,"reorder":0,"location":"","unit":"","expiryDate":"2029-01-01","issued":0},{"opening":0,"reorder":0,"issued":0,"name":"Metoclopramide TB 10 mg","received":0,"balance":0,"id":"D224","status":"OUT OF STOCK","location":"","unit":"","expiryDate":"2027-07-01"},{"status":"OUT OF STOCK","location":"","unit":"","balance":0,"received":0,"reorder":0,"expiryDate":"2030-10-01","id":"D283","name":"Nesben (Albendazole) TB 200 mg","opening":0,"issued":0},{"unit":"","status":"OUT OF STOCK","location":"","balance":0,"name":"Nitrofurantoin 50 mg Capsules (Manx)","id":"D163","expiryDate":"2028-01-01","reorder":0,"received":0,"issued":0,"opening":0},{"balance":0,"location":"","name":"Calcury Natural","status":"OUT OF STOCK","opening":0,"reorder":0,"expiryDate":"2028-09-01","issued":0,"received":0,"unit":"","id":"D240"},{"opening":0,"name":"Cataflam 50 mg","issued":0,"reorder":0,"id":"D149","expiryDate":"2027-12-01","received":0,"balance":0,"unit":"","location":"","status":"OUT OF STOCK"},{"received":0,"issued":0,"expiryDate":"2027-12-01","name":"Ibuprofen 200 mg","status":"OUT OF STOCK","opening":0,"reorder":0,"balance":0,"location":"","unit":"","id":"D154"},{"status":"OUT OF STOCK","received":0,"name":"Ibuprofen 400 mg TB","expiryDate":"2027-10-01","issued":0,"balance":0,"opening":0,"reorder":0,"location":"","id":"D155","unit":""},{"name":"Kirkland Acetaminophen 500 mg","received":0,"expiryDate":"2028-02-01","balance":0,"status":"OUT OF STOCK","opening":0,"reorder":0,"id":"D146","issued":0,"unit":"","location":""},{"expiryDate":"2029-10-01","name":"Lexotanil  1.5 mg Tablet","opening":0,"reorder":0,"issued":0,"location":"","balance":0,"status":"OUT OF STOCK","id":"D153","unit":"","received":0},{"balance":0,"unit":"","status":"OUT OF STOCK","location":"","reorder":0,"opening":0,"received":0,"id":"D148","name":"Metxone (metolazone) 5 mg","expiryDate":"2027-12-01","issued":0},{"status":"OUT OF STOCK","received":0,"expiryDate":"2029-10-01","unit":"","balance":0,"id":"D304","reorder":0,"location":"","name":"Provera 10 mg","issued":0,"opening":0},{"name":"PTU 50 mg (Propylthiouracil)","status":"OUT OF STOCK","id":"D152","location":"","issued":0,"unit":"","expiryDate":"2028-10-01","balance":0,"opening":0,"reorder":0,"received":0},{"name":"Sirdalud 2 mg TB","opening":0,"reorder":0,"issued":0,"balance":0,"received":0,"id":"D150","status":"OUT OF STOCK","unit":"","expiryDate":"2028-02-01","location":""},{"balance":0,"status":"OUT OF STOCK","location":"","unit":"","reorder":0,"opening":0,"received":0,"expiryDate":"2027-09-01","name":"Thiamine Hydrochloride TB 50 mg","id":"D151","issued":0},{"status":"OUT OF STOCK","received":0,"unit":"","expiryDate":"2029-01-01","id":"D145","balance":0,"name":"Tylenol 500 mg (acetaminophen)","reorder":0,"location":"","opening":0,"issued":0},{"issued":0,"location":"","name":"Uritab 10 mg ( alfuzosin)","status":"OUT OF STOCK","opening":0,"reorder":0,"id":"D333","received":0,"balance":0,"unit":"","expiryDate":"2028-11-01"},{"status":"OUT OF STOCK","received":0,"name":"Bactiflox Neo 500 mg TB (Ciprofloxacin)","expiryDate":"2030-10-01","id":"D158","unit":"","balance":0,"location":"","issued":0,"opening":0,"reorder":0},{"name":"Caffeine Citrate 10 mg TB","balance":0,"expiryDate":"2028-07-01","location":"","status":"OUT OF STOCK","opening":0,"reorder":0,"id":"D162","issued":0,"unit":"","received":0},{"reorder":0,"location":"","opening":0,"id":"D160","expiryDate":"2028-01-01","issued":0,"unit":"","balance":0,"received":0,"name":"Claforan (cefotaxime sodium) 0.5 g inj","status":"OUT OF STOCK"},{"issued":0,"opening":0,"reorder":0,"name":"Stagyl (Secnidazole) 1G","received":0,"expiryDate":"2028-08-01","id":"D253","balance":0,"unit":"","location":"","status":"OUT OF STOCK"},{"unit":"","received":0,"status":"OUT OF STOCK","issued":0,"balance":0,"name":"Ciflox (Ciprofloxacin) TB 500 mg","reorder":0,"id":"D282","opening":0,"expiryDate":"2029-04-01","location":""},{"name":"Cipracy (ciprofloxacin) 60 ml  suspension","received":0,"balance":0,"id":"D164","status":"OUT OF STOCK","opening":0,"reorder":0,"expiryDate":"2028-02-01","unit":"","issued":0,"location":""},{"id":"D264","name":"Gelofusine infusion","status":"OUT OF STOCK","received":0,"issued":0,"balance":0,"unit":"","opening":0,"reorder":0,"expiryDate":"2027-03-01","location":""},{"received":0,"id":"D348","name":"G-Ceftriaxone","issued":0,"location":"","status":"OUT OF STOCK","opening":0,"reorder":0,"unit":"","balance":0,"expiryDate":""},{"status":"OUT OF STOCK","location":"","name":"Pethidine injection (intraveneous)","id":"D325","balance":0,"expiryDate":"2030-09-01","issued":0,"unit":"","received":0,"opening":0,"reorder":0},{"received":0,"balance":0,"unit":"","status":"OUT OF STOCK","id":"D351","reorder":0,"opening":0,"name":"ORS (Paedialyte)","location":"","issued":0,"expiryDate":"2027-04-01"},{"issued":0,"unit":"","received":0,"id":"D355","reorder":0,"expiryDate":"2028-03-01","opening":0,"location":"","name":"Lavinac ( Diclofenac Suppositries) 100 mg","balance":0,"status":"OUT OF STOCK"},{"opening":0,"reorder":0,"issued":0,"received":0,"id":"D356","name":"Eurax Cream","balance":0,"location":"","unit":"","status":"OUT OF STOCK","expiryDate":"2028-02-01"},{"expiryDate":"2028-04-01","issued":0,"id":"D358","unit":"","location":"","reorder":0,"opening":0,"name":"Blood Glucose Test Strips","balance":0,"status":"OUT OF STOCK","received":0},{"issued":0,"expiryDate":"2030-09-01","name":"Disposable Blood LANCET","received":0,"opening":0,"id":"D359","reorder":0,"unit":"","status":"OUT OF STOCK","location":"","balance":0},{"name":"Omron (Blood Pressure Monitor )","id":"D360","status":"OUT OF STOCK","location":"","unit":"","issued":0,"expiryDate":"","balance":0,"opening":0,"reorder":0,"received":0},{"reorder":0,"opening":0,"issued":0,"location":"","expiryDate":"2028-06-01","balance":0,"unit":"","received":0,"id":"D361","status":"OUT OF STOCK","name":"Ascorbic C Syrup 100 ml (VITAMIN C)"},{"name":"Celecoxib 200 mg capsules (exeter)","status":"OUT OF STOCK","received":0,"issued":0,"id":"D362","unit":"","expiryDate":"2029-01-01","balance":0,"opening":0,"reorder":0,"location":""},{"unit":"","expiryDate":"2028-09-01","id":"D363","status":"OUT OF STOCK","location":"","balance":0,"name":"Vinmythro Clarithromycin TB  500 MG","received":0,"reorder":0,"issued":0,"opening":0},{"unit":"","received":0,"balance":0,"id":"D364","reorder":0,"opening":0,"status":"OUT OF STOCK","name":"Pulmicort 0.25 mg Nebules","issued":0,"location":"","expiryDate":"2028-01-01"},{"id":"D365","expiryDate":"2027-07-07","issued":0,"unit":"","received":0,"reorder":0,"opening":0,"name":"Galvusmet 50/500 mg","location":"","balance":0,"status":"OUT OF STOCK"},{"unit":"","status":"OUT OF STOCK","id":"D366","location":"","balance":0,"name":"Zincovit Syrup","expiryDate":"2027-07-01","reorder":0,"issued":0,"received":0,"opening":0},{"balance":0,"unit":"","status":"OUT OF STOCK","reorder":0,"id":"D367","location":"","opening":0,"expiryDate":"2027-03-01","name":"D-Artep 60/480","received":0,"issued":0},{"reorder":0,"opening":0,"balance":0,"expiryDate":"","received":0,"unit":"","issued":0,"status":"OUT OF STOCK","id":"D370","name":"Cerave Vitamin C skin Cream","location":""},{"issued":0,"unit":"","expiryDate":"","received":0,"reorder":0,"opening":0,"name":"Cerave Hydration Cleanser","location":"","status":"OUT OF STOCK","balance":0,"id":"D371"},{"id":"D372","unit":"","location":"","status":"OUT OF STOCK","balance":0,"issued":0,"reorder":0,"name":"Anua 70 + Glow toner","opening":0,"expiryDate":"","received":0},{"id":"D375","name":"Atenolol 50 mg","expiryDate":"2027-04-01","balance":0,"location":"","status":"OUT OF STOCK","opening":0,"reorder":0,"unit":"","issued":0,"received":0},{"received":0,"expiryDate":"2027-02-01","unit":"","status":"OUT OF STOCK","balance":0,"id":"D376","location":"","issued":0,"reorder":0,"opening":0,"name":"Esomeprazole 20 mg capsules Kirkland"},{"received":0,"issued":0,"name":"Oral B Essential floss","id":"D377","location":"","status":"OUT OF STOCK","opening":0,"reorder":0,"expiryDate":"","unit":"","balance":0},{"opening":0,"reorder":0,"issued":0,"received":0,"name":"Sucrafil O GEL","balance":0,"location":"","id":"D378","status":"OUT OF STOCK","expiryDate":"2028-12-01","unit":""},{"unit":"","id":"D379","location":"","status":"OUT OF STOCK","expiryDate":"2028-10-01","name":"Levo Denk 500 mg","received":0,"issued":0,"balance":0,"reorder":0,"opening":0},{"expiryDate":"2029-04-01","balance":0,"id":"D380","opening":0,"status":"OUT OF STOCK","reorder":0,"name":"Exforge 10/160","location":"","issued":0,"unit":"","received":0},{"received":0,"balance":0,"unit":"","reorder":0,"opening":0,"status":"OUT OF STOCK","expiryDate":"2029-04-01","issued":0,"location":"","name":"Stomocaine susp 250 ml syrup (ANTACID)","id":"D381"},{"status":"OUT OF STOCK","received":0,"expiryDate":"","unit":"","balance":0,"location":"","id":"D382","reorder":0,"issued":0,"name":"Glomprax inj","opening":0},{"balance":0,"unit":"","location":"","reorder":0,"opening":0,"status":"OUT OF STOCK","received":0,"issued":0,"expiryDate":"2028-07-01","name":"Tramapa 37.5  mg /325","id":"D383"},{"expiryDate":"2028-09-01","location":"","name":"Lisinopril 5mg","id":"D386","issued":0,"status":"OUT OF STOCK","opening":0,"reorder":0,"unit":"","balance":0,"received":0},{"unit":"","status":"OUT OF STOCK","expiryDate":"","received":0,"balance":0,"id":"D387","name":"Crestor","location":"","reorder":0,"issued":0,"opening":0},{"status":"OUT OF STOCK","balance":0,"expiryDate":"2027-10-01","name":"Zincofer Syrup","location":"","opening":0,"reorder":0,"id":"D388","received":0,"unit":"","issued":0},{"issued":0,"received":0,"name":"VEGA Clindamycin) injection 300 mg","opening":0,"reorder":0,"status":"OUT OF STOCK","location":"","expiryDate":"2028-03-01","unit":"","balance":0,"id":"D389"},{"expiryDate":"2030-07-01","opening":0,"reorder":0,"issued":0,"received":0,"name":"Fentanyl 100 mg","id":"D390","balance":0,"unit":"","status":"OUT OF STOCK","location":""},{"unit":"","reorder":0,"opening":0,"balance":0,"id":"D391","issued":0,"received":0,"name":"Milpharm Clarithromycin TB  500 MG","status":"OUT OF STOCK","expiryDate":"2028-09-01","location":""},{"opening":0,"received":0,"reorder":0,"id":"D392","expiryDate":"2027-10-01","name":"Amoxicillin suspension 250 mg","balance":0,"issued":0,"location":"","status":"OUT OF STOCK","unit":""},{"id":"D393","expiryDate":"2027-03-01","status":"OUT OF STOCK","unit":"","location":"","balance":0,"received":0,"name":"Amoxicillin suspension 125 mg Exeter","reorder":0,"issued":0,"opening":0},{"name":"Carbo-Kof junior.(carbocisteine)","id":"D394","received":0,"balance":0,"expiryDate":"2027-05-01","status":"OUT OF STOCK","opening":0,"reorder":0,"unit":"","issued":0,"location":""},{"name":"Injection (Dexamethasone) Troge","expiryDate":"2028-06-01","issued":0,"location":"","status":"OUT OF STOCK","unit":"","opening":0,"reorder":0,"id":"D395","received":0,"balance":0},{"status":"OUT OF STOCK","received":0,"unit":"","balance":0,"expiryDate":"2028-02-01","id":"D396","reorder":0,"name":"Seretide 50/250 mg","location":"","issued":0,"opening":0},{"reorder":0,"opening":0,"balance":0,"unit":"","expiryDate":"2027-02-01","received":0,"id":"D397","issued":0,"status":"OUT OF STOCK","location":"","name":"Neurogab - M"},{"status":"OUT OF STOCK","balance":0,"location":"","id":"D398","name":"Ceclav 457","opening":0,"reorder":0,"received":0,"unit":"","issued":0,"expiryDate":"2027-07-01"},{"reorder":0,"received":0,"opening":0,"balance":0,"unit":"","issued":0,"id":"D399","location":"","status":"OUT OF STOCK","expiryDate":"2027-07-01","name":"Ceclav 228.5"},{"expiryDate":"2027-07-01","status":"OUT OF STOCK","id":"D400","name":"Ceclav 625","received":0,"issued":0,"balance":0,"opening":0,"unit":"","reorder":0,"location":""},{"unit":"","reorder":0,"opening":0,"location":"","id":"D401","balance":0,"issued":0,"expiryDate":"2027-07-01","name":"Azax 500 mg","status":"OUT OF STOCK","received":0},{"expiryDate":"2027-07-01","opening":0,"reorder":0,"issued":0,"id":"D402","name":"Flunol 150 mg","received":0,"balance":0,"unit":"","status":"OUT OF STOCK","location":""},{"reorder":0,"unit":"","opening":0,"expiryDate":"2027-08-01","balance":0,"received":0,"issued":0,"status":"OUT OF STOCK","name":"Esom 20 mg","id":"D403","location":""},{"status":"OUT OF STOCK","expiryDate":"2027-09-01","name":"Vegatem (Artemeter lumefantrine) Suspension","location":"","id":"D404","received":0,"unit":"","balance":0,"issued":0,"opening":0,"reorder":0},{"status":"OUT OF STOCK","received":0,"name":"Potassium Chloride inj (American)","id":"D405","issued":0,"expiryDate":"2028-08-04","balance":0,"opening":0,"unit":"","reorder":0,"location":""},{"name":"Gentamycin sulphate 80 mg inj","expiryDate":"2028-06-01","issued":0,"location":"","status":"OUT OF STOCK","unit":"","opening":0,"id":"D406","reorder":0,"balance":0,"received":0},{"received":0,"status":"OUT OF STOCK","name":"Amlodipine 5 mg Teva","expiryDate":"2028-04-01","issued":0,"location":"","balance":0,"opening":0,"reorder":0,"id":"D407","unit":""},{"unit":"","balance":0,"reorder":0,"id":"D408","opening":0,"status":"OUT OF STOCK","location":"","expiryDate":"2029-07-01","name":"Zentel 400 mg Tb (albendazole)","issued":0,"received":0},{"balance":0,"location":"","reorder":0,"opening":0,"unit":"","status":"OUT OF STOCK","expiryDate":"2028-09-01","received":0,"issued":0,"id":"D409","name":"Ciprofloxacin Hydrochloride susp 250 mg (VEGA)"},{"expiryDate":"2027-07-01","unit":"","status":"OUT OF STOCK","location":"","balance":0,"issued":0,"reorder":0,"received":0,"opening":0,"id":"D410","name":"Hypertonic  Saline  solution"},{"reorder":0,"expiryDate":"2029-11-01","unit":"","opening":0,"issued":0,"received":0,"id":"D411","balance":0,"name":"Enafen 400 mg TB","status":"OUT OF STOCK","location":""},{"status":"OUT OF STOCK","name":"Caffeine  citrat oral solution","id":"D412","received":0,"unit":"","balance":0,"expiryDate":"2027-01-01","issued":0,"location":"","opening":0,"reorder":0},{"location":"","balance":0,"expiryDate":"2027-05-01","name":"Brufen Paedialite 3+ 100ml","status":"OUT OF STOCK","opening":0,"reorder":0,"issued":0,"received":0,"unit":"","id":"D413"},{"expiryDate":"2027-09-01","unit":"","id":"D414","status":"OUT OF STOCK","location":"","balance":0,"issued":0,"reorder":0,"name":"Hydrolyte TB ECL","opening":0,"received":0},{"issued":0,"opening":0,"reorder":0,"name":"Mecapreg (pregabalin) 75/750","expiryDate":"2028-07-01","location":"","balance":0,"unit":"","status":"OUT OF STOCK","id":"D415","received":0},{"expiryDate":"2028-02-01","name":"Hydrogen Peroxide 100 ml","status":"OUT OF STOCK","location":"","issued":0,"unit":"","id":"D416","balance":0,"opening":0,"reorder":0,"received":0},{"unit":"","reorder":0,"opening":0,"id":"D417","issued":0,"received":0,"expiryDate":"2028-02-01","balance":0,"name":"Varosun TB 20 mg","location":"","status":"OUT OF STOCK"},{"received":0,"unit":"","reorder":0,"opening":0,"balance":0,"expiryDate":"2028-01-01","issued":0,"id":"D418","status":"OUT OF STOCK","name":"Glimepiride 2 mg ECL","location":""},{"expiryDate":"2030-02-01","issued":0,"unit":"","received":0,"reorder":0,"id":"D419","opening":0,"location":"","name":"Diflucan capsules 150 mg","balance":0,"status":"OUT OF STOCK"},{"unit":"","balance":0,"id":"D420","status":"OUT OF STOCK","received":0,"expiryDate":"2027-06-01","reorder":0,"opening":0,"location":"","name":"K-Y lubricating jell","issued":0},{"opening":0,"name":"Amino-Pep 200 ml Forte","received":0,"reorder":0,"issued":0,"balance":0,"status":"OUT OF STOCK","location":"","unit":"","id":"D421","expiryDate":"2027-04-01"},{"balance":0,"reorder":0,"opening":0,"unit":"","status":"OUT OF STOCK","location":"","id":"D422","issued":0,"expiryDate":"2030-05-01","received":0,"name":"Calcicon 500 mg TB"},{"status":"OUT OF STOCK","name":"Omezole  20 mg ECL ( omeprazole )","id":"D423","location":"","unit":"","balance":0,"issued":0,"received":0,"expiryDate":"2028-05-01","opening":0,"reorder":0},{"name":"Promizel Syrup","status":"OUT OF STOCK","received":0,"expiryDate":"2027-03-01","issued":0,"unit":"","balance":0,"opening":0,"reorder":0,"id":"D424","location":""},{"status":"OUT OF STOCK","balance":0,"opening":0,"location":"","name":"Lavinac ( Para-Suppositries) 250 mg","reorder":0,"id":"D425","received":0,"issued":0,"unit":"","expiryDate":"2028-06-01"},{"status":"OUT OF STOCK","balance":0,"location":"","name":"Glibenil 5mg","expiryDate":"2027-05-01","opening":0,"reorder":0,"id":"D426","received":0,"unit":"","issued":0},{"issued":0,"location":"","unit":"","reorder":0,"opening":0,"expiryDate":"2027-04-01","id":"D427","name":"Orelox 40 mg suspension","balance":0,"status":"OUT OF STOCK","received":0},{"reorder":0,"opening":0,"location":"","issued":0,"unit":"","balance":0,"expiryDate":"2029-03-01","received":0,"name":"Enaphage 500 mg ECL","id":"D428","status":"OUT OF STOCK"},{"balance":0,"unit":"","status":"OUT OF STOCK","location":"","expiryDate":"2028-02-01","reorder":0,"opening":0,"received":0,"id":"D429","name":"Varosun 10 mg","issued":0},{"received":0,"expiryDate":"2029-08-01","unit":"","issued":0,"reorder":0,"status":"OUT OF STOCK","location":"","opening":0,"balance":0,"id":"D430","name":"Prednisolone 5mg ECL"},{"opening":0,"issued":0,"name":"Neo- Hycolex","reorder":0,"id":"D431","location":"","balance":0,"unit":"","expiryDate":"2027-07-01","status":"OUT OF STOCK","received":0},{"unit":"","location":"","issued":0,"status":"OUT OF STOCK","reorder":0,"name":"Permoxyl 250 mg ECL","id":"D432","opening":0,"expiryDate":"2028-01-01","received":0,"balance":0},{"unit":"","location":"","issued":0,"received":0,"status":"OUT OF STOCK","reorder":0,"expiryDate":"2027-06-01","opening":0,"name":"levofloxacin 500 mg (infile)","id":"D433","balance":0},{"issued":0,"received":0,"expiryDate":"2027-07-01","name":"Lactulose 500 ml Black","opening":0,"reorder":0,"location":"","id":"D434","status":"OUT OF STOCK","unit":"","balance":0},{"unit":"","location":"","issued":0,"id":"D435","name":"Labetanol inj","status":"OUT OF STOCK","reorder":0,"expiryDate":"2027-07-07","opening":0,"balance":0,"received":0},{"opening":0,"issued":0,"reorder":0,"name":"Gucefor inj","received":0,"balance":0,"unit":"","id":"D436","status":"OUT OF STOCK","location":"","expiryDate":"2027-07-01"},{"balance":0,"location":"","opening":0,"status":"OUT OF STOCK","reorder":0,"name":"Secnidex 1G TB 2's","id":"D437","issued":0,"received":0,"expiryDate":"2028-02-01","unit":""},{"balance":0,"unit":"","location":"","reorder":0,"expiryDate":"2028-10-01","opening":0,"status":"OUT OF STOCK","received":0,"issued":0,"name":"LG- Glizone ( piogliatazone) Tablet","id":"D438"},{"unit":"","id":"D439","issued":0,"received":0,"reorder":0,"name":"Methycobal 500","opening":0,"expiryDate":"2027-01-01","location":"","status":"OUT OF STOCK","balance":0},{"name":"Cebrotonin 800 mg","received":0,"status":"OUT OF STOCK","id":"D441","issued":0,"unit":"","expiryDate":"2028-10-01","balance":0,"location":"","opening":0,"reorder":0},{"unit":"","location":"","id":"D442","issued":0,"expiryDate":"2028-01-01","name":"Carbo-Kof Adult.(carbocisteine)","status":"OUT OF STOCK","reorder":0,"opening":0,"balance":0,"received":0},{"reorder":0,"unit":"","opening":0,"received":0,"balance":0,"expiryDate":"2027-06-01","issued":0,"location":"","status":"OUT OF STOCK","name":"Carvedilol 12.5 mg","id":"D443"},{"issued":0,"name":"Pregnacare Conception","location":"","expiryDate":"2028-03-01","opening":0,"received":0,"reorder":0,"unit":"","id":"D444","status":"OUT OF STOCK","balance":0},{"balance":0,"received":0,"status":"OUT OF STOCK","unit":"","reorder":0,"opening":0,"expiryDate":"2028-09-01","id":"D445","location":"","name":"Aptizoom syrup","issued":0},{"expiryDate":"2027-04-01","status":"OUT OF STOCK","name":"Zincovit Tablet","location":"","issued":0,"id":"D446","balance":0,"opening":0,"reorder":0,"received":0,"unit":""},{"unit":"","reorder":0,"opening":0,"balance":0,"id":"D447","received":0,"issued":0,"name":"Pregnancy Test strips","status":"OUT OF STOCK","expiryDate":"2027-04-01","location":""},{"received":0,"expiryDate":"2027-09-01","issued":0,"unit":"","id":"D448","reorder":0,"location":"","opening":0,"name":"Salbutamol  Respirator (ASTHAVENT)","balance":0,"status":"OUT OF STOCK"},{"unit":"","balance":0,"received":0,"expiryDate":"2027-10-01","status":"OUT OF STOCK","id":"D449","reorder":0,"opening":0,"name":"Beda expect cough syrup 100 ml","location":"","issued":0},{"received":0,"unit":"","id":"D451","status":"OUT OF STOCK","expiryDate":"2030-10-01","balance":0,"issued":0,"location":"","reorder":0,"opening":0,"name":"Dormicum injection 5mg/5ml 10's"},{"expiryDate":"2029-04-01","status":"OUT OF STOCK","unit":"","received":0,"id":"D452","balance":0,"location":"","name":"Dormicum injection 15mg/5ml 5's","reorder":0,"opening":0,"issued":0},{"unit":"","status":"OUT OF STOCK","id":"D453","received":0,"name":"Dihydro codeine 30 mg TB 100 's","expiryDate":"2027-09-01","balance":0,"issued":0,"reorder":0,"location":"","opening":0},{"balance":0,"received":0,"status":"OUT OF STOCK","expiryDate":"2028-03-01","unit":"","id":"D454","reorder":0,"opening":0,"location":"","name":"Ferrous Sulphate TB 200 MG uk","issued":0},{"name":"Infacol suspension 55 ml","received":0,"issued":0,"expiryDate":"2028-05-01","status":"OUT OF STOCK","location":"","opening":0,"unit":"","reorder":0,"balance":0,"id":"D455"},{"name":"Nurofen Children susp 100ml","id":"D456","issued":0,"expiryDate":"2029-02-01","received":0,"unit":"","status":"OUT OF STOCK","opening":0,"reorder":0,"balance":0,"location":""},{"expiryDate":"2029-01-01","name":"Wellman 50 PLUS tb","status":"OUT OF STOCK","location":"","issued":0,"unit":"","balance":0,"opening":0,"reorder":0,"id":"D457","received":0},{"opening":0,"received":0,"reorder":0,"id":"D458","name":"Hydrogen Peroxide 200ml  UK","issued":0,"balance":0,"location":"","status":"OUT OF STOCK","unit":"","expiryDate":"2027-05-01"},{"unit":"","reorder":0,"opening":0,"balance":0,"issued":0,"location":"","id":"D459","status":"OUT OF STOCK","expiryDate":"2028-01-01","name":"Corsodyl mouthwash fresh mint","received":0},{"balance":0,"status":"OUT OF STOCK","unit":"","reorder":0,"location":"","opening":0,"id":"D460","received":0,"expiryDate":"2028-02-02","name":"Corsodyl mouthwash cool mint","issued":0},{"unit":"","id":"D461","status":"OUT OF STOCK","expiryDate":"2027-12-01","location":"","balance":0,"name":"Lactulose 300ml","received":0,"reorder":0,"issued":0,"opening":0},{"name":"Tixylix children's cough syrup 5yrs 100ml","opening":0,"received":0,"reorder":0,"issued":0,"balance":0,"status":"OUT OF STOCK","expiryDate":"2028-10-01","location":"","unit":"","id":"D462"},{"received":0,"name":"Mertronidazole Tab 400mg","issued":0,"expiryDate":"2027-12-12","status":"OUT OF STOCK","location":"","opening":0,"unit":"","reorder":0,"balance":0,"id":"D463"},{"unit":"","issued":0,"id":"D464","expiryDate":"2027-05-01","received":0,"reorder":0,"opening":0,"name":"Otrivin Nasal Drops 10 ml Children","location":"","status":"OUT OF STOCK","balance":0},{"unit":"","status":"OUT OF STOCK","location":"","id":"D465","balance":0,"received":0,"name":"Dexamethasone 4mg TB China","expiryDate":"2028-06-01","reorder":0,"issued":0,"opening":0},{"expiryDate":"2028-09-01","name":"Hydrocortisone injection 100mg India (ciron)","issued":0,"id":"D466","received":0,"status":"OUT OF STOCK","opening":0,"reorder":0,"unit":"","location":"","balance":0},{"status":"OUT OF STOCK","location":"","name":"Promethazine 50 mg CHINa (Phenegan inj )","id":"D467","balance":0,"unit":"","issued":0,"expiryDate":"2028-12-01","opening":0,"received":0,"reorder":0},{"reorder":0,"opening":0,"unit":"","issued":0,"received":0,"expiryDate":"2029-12-12","balance":0,"id":"D468","name":"Bendroflumethazide 2.5mg TB","status":"OUT OF STOCK","location":""},{"status":"OUT OF STOCK","expiryDate":"2028-10-01","name":"Fluconazole Tab 150mg TEVA","id":"D469","location":"","unit":"","balance":0,"issued":0,"received":0,"opening":0,"reorder":0},{"opening":0,"reorder":0,"balance":0,"issued":0,"received":0,"name":"Pioglitazone 15mg Tab","status":"OUT OF STOCK","expiryDate":"2027-11-01","location":"","id":"D470","unit":""},{"status":"OUT OF STOCK","name":"Methyldopa 500 mg TB accord","received":0,"balance":0,"id":"D471","expiryDate":"2027-08-09","opening":0,"reorder":0,"unit":"","location":"","issued":0},{"status":"OUT OF STOCK","name":"Fluoxetine 20mg tab","received":0,"id":"D472","unit":"","balance":0,"location":"","issued":0,"opening":0,"reorder":0,"expiryDate":"2028-04-01"},{"reorder":0,"opening":0,"location":"","issued":0,"unit":"","balance":0,"expiryDate":"2028-08-01","name":"Finasteride Tab 5mg","received":0,"id":"D473","status":"OUT OF STOCK"},{"name":"Gamok injection 1.2 g","status":"OUT OF STOCK","expiryDate":"2027-09-01","received":0,"issued":0,"unit":"","balance":0,"opening":0,"id":"D474","reorder":0,"location":""},{"issued":0,"received":0,"unit":"","reorder":0,"expiryDate":"2028-05-01","opening":0,"id":"D475","balance":0,"status":"OUT OF STOCK","location":"","name":"Suconil (Suxamethonium)"},{"name":"Mixtard Flex Pen","status":"OUT OF STOCK","received":0,"id":"D476","issued":0,"unit":"","balance":0,"opening":0,"reorder":0,"expiryDate":"2027-07-01","location":""},{"unit":"","issued":0,"id":"D477","received":0,"reorder":0,"name":"ATS","location":"","opening":0,"expiryDate":"","status":"OUT OF STOCK","balance":0},{"expiryDate":"2028-02-01","name":"Actrapid","location":"","issued":0,"status":"OUT OF STOCK","opening":0,"unit":"","reorder":0,"balance":0,"received":0,"id":"D478"},{"received":0,"id":"D479","unit":"","issued":0,"expiryDate":"2027-09-01","reorder":0,"status":"OUT OF STOCK","opening":0,"balance":0,"name":"Xalatan","location":""},{"balance":0,"expiryDate":"2027-02-01","received":0,"reorder":0,"unit":"","opening":0,"status":"OUT OF STOCK","id":"D480","location":"","issued":0,"name":"Dalacin"},{"location":"","unit":"","issued":0,"reorder":0,"expiryDate":"2027-12-01","status":"OUT OF STOCK","opening":0,"balance":0,"received":0,"id":"D481","name":"Mixtard"},{"status":"OUT OF STOCK","location":"","name":"Fostimon 75","balance":0,"received":0,"issued":0,"opening":0,"unit":"","reorder":0,"expiryDate":"2027-10-10","id":"D482"},{"issued":0,"name":"Merional","received":0,"opening":0,"reorder":0,"expiryDate":"2027-12-12","status":"OUT OF STOCK","location":"","id":"D483","unit":"","balance":0},{"id":"D484","status":"OUT OF STOCK","name":"Carbitex","location":"","balance":0,"unit":"","expiryDate":"2027-11-01","received":0,"issued":0,"opening":0,"reorder":0},{"name":"Hep B","issued":0,"location":"","status":"OUT OF STOCK","unit":"","opening":0,"reorder":0,"id":"D485","balance":0,"expiryDate":"2029-01-01","received":0},{"id":"D486","opening":0,"reorder":0,"issued":0,"name":"Candibiotic","received":0,"balance":0,"unit":"","status":"OUT OF STOCK","location":"","expiryDate":"2027-08-01"},{"balance":0,"location":"","reorder":0,"opening":0,"unit":"","status":"OUT OF STOCK","expiryDate":"2027-10-01","received":0,"id":"D487","issued":0,"name":"Fostimon 150"},{"expiryDate":"2027-10-01","status":"OUT OF STOCK","received":0,"unit":"","balance":0,"id":"D488","reorder":0,"location":"","name":"DANO (Tetanus  vaccine)","opening":0,"issued":0},{"id":"D489","status":"OUT OF STOCK","unit":"","location":"","expiryDate":"2028-09-01","balance":0,"received":0,"name":"Suxanaman","reorder":0,"issued":0,"opening":0},{"name":"Anti Rabbies","location":"","balance":0,"status":"OUT OF STOCK","opening":0,"reorder":0,"expiryDate":"2028-12-01","issued":0,"received":0,"unit":"","id":"D490"},{"status":"OUT OF STOCK","location":"","name":"Busereline","balance":0,"expiryDate":"2027-11-01","id":"D491","received":0,"issued":0,"unit":"","opening":0,"reorder":0},{"unit":"","reorder":0,"id":"D492","opening":0,"issued":0,"received":0,"balance":0,"name":"Tetanus Vaccine","location":"","expiryDate":"","status":"OUT OF STOCK"},{"unit":"","balance":0,"reorder":0,"opening":0,"status":"OUT OF STOCK","received":0,"id":"D493","expiryDate":"2028-03-01","issued":0,"name":"RDNA hep B vaccine","location":""},{"unit":"","received":0,"issued":0,"reorder":0,"id":"D494","status":"OUT OF STOCK","opening":0,"balance":0,"location":"","name":"Insulatard","expiryDate":"2026-11-01"},{"reorder":0,"opening":0,"issued":0,"received":0,"balance":0,"unit":"","expiryDate":"2027-12-01","location":"","status":"OUT OF STOCK","id":"D495","name":"Anti-Rho D"},{"issued":0,"id":"D496","unit":"","expiryDate":"2028-05-01","received":0,"reorder":0,"opening":0,"location":"","name":"PrO- Alb 20 mg","balance":0,"status":"OUT OF STOCK"},{"opening":0,"received":0,"reorder":0,"balance":0,"issued":0,"name":"Malar 2","location":"","status":"OUT OF STOCK","expiryDate":"2028-09-01","id":"D497","unit":""},{"status":"OUT OF STOCK","id":"D498","name":"Neostigmine Methysulphate (fresenius)","location":"","balance":0,"unit":"","received":0,"expiryDate":"2029-02-01","issued":0,"opening":0,"reorder":0},{"status":"OUT OF STOCK","location":"","name":"Kefen 100 mg (aceclofenac)","received":0,"expiryDate":"2028-02-01","balance":0,"id":"D499","issued":0,"opening":0,"unit":"","reorder":0},{"id":"D500","received":0,"unit":"","issued":0,"expiryDate":"2027-10-01","location":"","reorder":0,"status":"OUT OF STOCK","opening":0,"balance":0,"name":"lavinac 30G Gel (Diclofenac gel)"},{"location":"","opening":0,"reorder":0,"balance":0,"id":"D501","name":"BeeHive Balsam 200 ml","issued":0,"expiryDate":"2030-05-01","status":"OUT OF STOCK","received":0,"unit":""},{"unit":"","reorder":0,"opening":0,"location":"","issued":0,"id":"D502","balance":0,"name":"Vancomycin Hydrochloride inj 1.0 g (VANCOCIP)","expiryDate":"2027-11-01","received":0,"status":"OUT OF STOCK"},{"opening":0,"reorder":0,"issued":0,"name":"Ferrum-S 20 mg (iron sucrose inj)","balance":0,"received":0,"id":"D503","status":"OUT OF STOCK","location":"","unit":"","expiryDate":"2028-03-01"},{"issued":0,"location":"","name":"Furosemide ECL 40 mg","opening":0,"reorder":0,"status":"OUT OF STOCK","received":0,"expiryDate":"2028-02-01","unit":"","balance":0,"id":"D504"},{"reorder":0,"received":0,"opening":0,"id":"D505","issued":0,"unit":"","balance":0,"location":"","name":"Lavina nasal drop 10 ml","status":"OUT OF STOCK","expiryDate":"2027-10-01"},{"received":0,"balance":0,"reorder":0,"unit":"","opening":0,"id":"D506","status":"OUT OF STOCK","location":"","issued":0,"expiryDate":"2027-07-01","name":"Klovinal Pess"},{"status":"OUT OF STOCK","received":0,"name":"Pregasafe 75 mg (pregabalin ) capsules","balance":0,"id":"D507","opening":0,"reorder":0,"expiryDate":"2028-05-01","unit":"","location":"","issued":0},{"status":"OUT OF STOCK","location":"","name":"Buscomed 10 mg","issued":0,"id":"D508","balance":0,"opening":0,"reorder":0,"unit":"","received":0,"expiryDate":"2029-12-01"},{"received":0,"status":"OUT OF STOCK","unit":"","balance":0,"expiryDate":"","location":"","id":"D509","reorder":0,"name":"FML Neo liquid susp","issued":0,"opening":0},{"expiryDate":"2026-11-01","status":"OUT OF STOCK","received":0,"name":"Children's Para Suspension (Acetaminophen) 160 mg","issued":0,"balance":0,"opening":0,"reorder":0,"unit":"","id":"D510","location":""},{"id":"D511","balance":0,"received":0,"opening":0,"expiryDate":"2028-03-01","name":"Carbimazole 20 mg TB (UK)","status":"OUT OF STOCK","reorder":0,"issued":0,"location":"","unit":""},{"location":"","name":"Glimepiride tab4 MG","opening":0,"reorder":0,"issued":0,"id":"D512","balance":0,"expiryDate":"2027-01-01","status":"OUT OF STOCK","unit":"","received":0},{"location":"","status":"OUT OF STOCK","expiryDate":"2026-12-12","unit":"","balance":0,"received":0,"id":"D513","reorder":0,"name":"Omeprazole cap 20mg","issued":0,"opening":0},{"opening":0,"expiryDate":"2028-05-05","issued":0,"reorder":0,"name":"Clarithromycin 500mg Exeter","location":"","balance":0,"unit":"","id":"D514","status":"OUT OF STOCK","received":0},{"unit":"","expiryDate":"2028-11-01","status":"OUT OF STOCK","location":"","issued":0,"balance":0,"name":"Diclofenac inj Troge","reorder":0,"opening":0,"received":0,"id":"D515"},{"balance":0,"received":0,"status":"OUT OF STOCK","id":"D516","unit":"","reorder":0,"opening":0,"expiryDate":"2028-11-01","location":"","name":"URISOL Sachets","issued":0},{"issued":0,"name":"Promethazine inj 50 mg POM","id":"D517","location":"","unit":"","opening":0,"reorder":0,"status":"OUT OF STOCK","received":0,"expiryDate":"2029-03-01","balance":0},{"balance":0,"id":"D518","received":0,"unit":"","reorder":0,"opening":0,"status":"OUT OF STOCK","expiryDate":"2028-09-01","location":"","issued":0,"name":"Phenobarbiton inj 200 mg"},{"id":"D519","status":"OUT OF STOCK","received":0,"name":"Tramadol caps 100 mg (New Global)","expiryDate":"2029-05-01","balance":0,"unit":"","issued":0,"location":"","opening":0,"reorder":0},{"location":"","name":"Diclo-Denk (Diclofenac ) Suppositories 100 mg","expiryDate":"2028-07-01","issued":0,"id":"D520","status":"OUT OF STOCK","unit":"","received":0,"opening":0,"reorder":0,"balance":0},{"expiryDate":"2028-06-01","id":"D521","status":"OUT OF STOCK","unit":"","received":0,"balance":0,"name":"Cipro-Denk","reorder":0,"location":"","issued":0,"opening":0},{"issued":0,"name":"Carvedilol 6.25 mg","received":0,"id":"D522","opening":0,"unit":"","reorder":0,"location":"","expiryDate":"2028-10-01","status":"OUT OF STOCK","balance":0},{"expiryDate":"2027-05-01","issued":0,"location":"","name":"Lexsporin Antibiotic ointment 20 mg","opening":0,"reorder":0,"id":"D523","status":"OUT OF STOCK","unit":"","balance":0,"received":0},{"reorder":0,"opening":0,"unit":"","issued":0,"received":0,"balance":0,"location":"","name":"Oramorph Morphine oral Solution 10 mg","expiryDate":"2028-07-01","id":"D524","status":"OUT OF STOCK"},{"expiryDate":"2028-01-01","unit":"","received":0,"id":"D525","issued":0,"reorder":0,"status":"OUT OF STOCK","opening":0,"location":"","balance":0,"name":"Travatan 40 mg eye drop"},{"received":0,"issued":0,"name":"Spironolactone 25 mg","id":"D526","location":"","status":"OUT OF STOCK","opening":0,"reorder":0,"balance":0,"unit":"","expiryDate":"2029-04-01"},{"status":"OUT OF STOCK","balance":0,"name":"Lavina Tetracycline Eye ointment","id":"D527","opening":0,"reorder":0,"received":0,"unit":"","issued":0,"expiryDate":"2028-10-01","location":""},{"status":"OUT OF STOCK","id":"D528","location":"","name":"Bells Children Calamine Lotion 1 yr+","received":0,"expiryDate":"2027-07-01","balance":0,"unit":"","issued":0,"opening":0,"reorder":0},{"opening":0,"location":"","reorder":0,"name":"Linctus Baby cough (ECL)","issued":0,"balance":0,"status":"OUT OF STOCK","received":0,"unit":"","expiryDate":"2029-07-01","id":"D529"},{"received":0,"opening":0,"reorder":0,"issued":0,"name":"Methylated Spirit ECl 125 ml","balance":0,"id":"D530","location":"","status":"OUT OF STOCK","unit":"","expiryDate":""},{"issued":0,"received":0,"name":"No-Spa 40 mg Tb","opening":0,"reorder":0,"id":"D531","location":"","expiryDate":"2029-05-01","status":"OUT OF STOCK","unit":"","balance":0},{"expiryDate":"2027-07-01","name":"Troge Tetracycline Eye ointment","issued":0,"received":0,"id":"D532","status":"OUT OF STOCK","unit":"","opening":0,"reorder":0,"location":"","balance":0},{"status":"OUT OF STOCK","location":"","name":"Gliclazide Tab 80 mg 100 ecl","balance":0,"id":"D533","expiryDate":"2029-07-01","issued":0,"unit":"","opening":0,"received":0,"reorder":0},{"unit":"","balance":0,"status":"OUT OF STOCK","id":"D534","reorder":0,"received":0,"opening":0,"name":"Paracetamol TB 500 (Crescent)","expiryDate":"2030-04-01","location":"","issued":0},{"name":"Celecoxib  200 mg capsules 100's","issued":0,"opening":0,"reorder":0,"id":"D535","balance":0,"received":0,"unit":"","status":"OUT OF STOCK","expiryDate":"","location":""},{"name":"Celecoxib  200 mg capsules 30's","id":"D536","issued":0,"opening":0,"reorder":0,"received":0,"balance":0,"unit":"","status":"OUT OF STOCK","expiryDate":"","location":""},{"id":"D537","unit":"","received":0,"status":"OUT OF STOCK","expiryDate":"","balance":0,"issued":0,"reorder":0,"name":"Azithromycin 200 mg (DONPAK)","opening":0,"location":""},{"location":"","balance":0,"opening":0,"status":"OUT OF STOCK","reorder":0,"name":"Para Syrup 120 mg  (exeter)","issued":0,"received":0,"id":"D538","expiryDate":"2029-06-01","unit":""},{"location":"","opening":0,"reorder":0,"name":"Salbutamol Syrup 200 ml ECL","expiryDate":"2029-04-01","issued":0,"balance":0,"status":"OUT OF STOCK","received":0,"unit":"","id":"D539"},{"unit":"","expiryDate":"2029-06-01","received":0,"issued":0,"id":"D540","name":"Multivitamin Syrup 100 ml","status":"OUT OF STOCK","reorder":0,"opening":0,"balance":0,"location":""},{"status":"OUT OF STOCK","name":"Criston Syrup","location":"","id":"D541","balance":0,"unit":"","received":0,"issued":0,"opening":0,"expiryDate":"2028-12-01","reorder":0},{"unit":"","issued":0,"received":0,"reorder":0,"expiryDate":"2028-08-01","opening":0,"id":"D542","name":"Marcaine inj 5mg","status":"OUT OF STOCK","balance":0,"location":""},{"opening":0,"received":0,"reorder":0,"name":"Aeriu 0.5mg","issued":0,"balance":0,"status":"OUT OF STOCK","location":"","expiryDate":"2027-04-04","unit":"","id":"D543"},{"name":"Abbvie FML","opening":0,"reorder":0,"received":0,"issued":0,"balance":0,"id":"D544","status":"OUT OF STOCK","unit":"","location":"","expiryDate":"2027-04-04"},{"unit":"","balance":0,"status":"OUT OF STOCK","location":"","id":"D545","reorder":0,"opening":0,"received":0,"name":"Dexamethasone 4mg(Novodex)","expiryDate":"2028-03-03","issued":0},{"status":"OUT OF STOCK","balance":0,"name":"Hydralazine Hydrochloride Injection 20 mg (OCEAN)","expiryDate":"2028-06-01","received":0,"opening":0,"reorder":0,"unit":"","id":"D546","issued":0,"location":""},{"id":"D547","received":0,"balance":0,"name":"Laviflam 125 (Paracetamol)","opening":0,"status":"OUT OF STOCK","reorder":0,"issued":0,"location":"","unit":"","expiryDate":"2026-11-01"},{"location":"","expiryDate":"2027-10-01","opening":0,"reorder":0,"name":"Progynance 400 mg TB","issued":0,"balance":0,"status":"OUT OF STOCK","received":0,"unit":"","id":"D548"},{"name":"Progynance 200 mg TB","expiryDate":"2028-07-01","opening":0,"reorder":0,"issued":0,"balance":0,"received":0,"id":"D549","status":"OUT OF STOCK","unit":"","location":""},{"received":0,"unit":"","status":"OUT OF STOCK","balance":0,"issued":0,"reorder":0,"expiryDate":"2028-09-09","id":"D550","opening":0,"name":"Capol 2+ months","location":""},{"unit":"","reorder":0,"opening":0,"id":"D551","issued":0,"location":"","balance":0,"name":"Clopidogrel 75 mg (Zentiva)","expiryDate":"2028-10-01","status":"OUT OF STOCK","received":0},{"id":"D552","balance":0,"location":"","unit":"","reorder":0,"opening":0,"status":"OUT OF STOCK","expiryDate":"2028-06-01","received":0,"issued":0,"name":"Clopidogrel 75 mg (Amu)"},{"unit":"","status":"OUT OF STOCK","expiryDate":"2028-03-01","location":"","id":"D553","name":"Nitrofurantoin 50 mg Capsules (TilloMed)","balance":0,"issued":0,"reorder":0,"opening":0,"received":0},{"received":0,"name":"Refresh Liquid gel","balance":0,"status":"OUT OF STOCK","opening":0,"expiryDate":"2027-12-01","reorder":0,"id":"D554","issued":0,"unit":"","location":""},{"received":0,"unit":"","status":"OUT OF STOCK","balance":0,"expiryDate":"2029-04-01","issued":0,"location":"","name":"Skyfix Cifixime TB 200 MG","reorder":0,"id":"D555","opening":0},{"unit":"","status":"OUT OF STOCK","location":"","expiryDate":"2028-12-01","balance":0,"issued":0,"name":"Glucose Powder","reorder":0,"received":0,"opening":0,"id":"D556"},{"opening":0,"name":"Domi- 10","issued":0,"reorder":0,"id":"D557","received":0,"balance":0,"unit":"","location":"","expiryDate":"2028-10-01","status":"OUT OF STOCK"},{"expiryDate":"2028-12-01","balance":0,"unit":"","status":"OUT OF STOCK","reorder":0,"location":"","opening":0,"id":"D558","name":"Skymet Aethemether 80 mg","received":0,"issued":0},{"name":"Skymet Aethemether 30 mg","id":"D559","issued":0,"received":0,"expiryDate":"2029-03-01","unit":"","status":"OUT OF STOCK","opening":0,"reorder":0,"location":"","balance":0},{"received":0,"name":"Envither Injection (Artemether 80 mg )","balance":0,"status":"OUT OF STOCK","opening":0,"reorder":0,"issued":0,"unit":"","id":"D560","location":"","expiryDate":"2029-01-01"},{"expiryDate":"","unit":"","status":"OUT OF STOCK","received":0,"balance":0,"name":"Imiprimine 25 mg  TB","id":"D561","reorder":0,"issued":0,"location":"","opening":0},{"unit":"","status":"OUT OF STOCK","location":"","balance":0,"name":"Choriomon","id":"D562","received":0,"reorder":0,"issued":0,"expiryDate":"2028-08-01","opening":0},{"status":"OUT OF STOCK","balance":0,"expiryDate":"2028-11-01","received":0,"name":"Gvither inj","opening":0,"reorder":0,"id":"D563","unit":"","issued":0,"location":""},{"unit":"","reorder":0,"opening":0,"balance":0,"issued":0,"received":0,"status":"OUT OF STOCK","id":"D564","name":"Painoff","expiryDate":"2030-11-01","location":""},{"expiryDate":"2027-11-01","id":"D565","balance":0,"opening":0,"location":"","name":"Syntrexa 10","status":"OUT OF STOCK","reorder":0,"issued":0,"unit":"","received":0},{"opening":0,"reorder":0,"id":"D566","name":"Diclofenac Suppositries 100 mg ( DFRON)","balance":0,"issued":0,"received":0,"status":"OUT OF STOCK","expiryDate":"2027-02-01","unit":"","location":""},{"opening":0,"reorder":0,"location":"","balance":0,"issued":0,"name":"Varosun TB 15 mg","expiryDate":"2028-12-01","status":"OUT OF STOCK","id":"D567","unit":"","received":0},{"status":"OUT OF STOCK","balance":0,"id":"D568","name":"Capol 6+ months","expiryDate":"2029-01-01","received":0,"opening":0,"reorder":0,"unit":"","issued":0,"location":""},{"status":"OUT OF STOCK","location":"","unit":"","expiryDate":"2027-02-01","balance":0,"id":"D569","reorder":0,"received":0,"name":"Abbvie Alphagan","issued":0,"opening":0},{"balance":0,"location":"","reorder":0,"opening":0,"unit":"","status":"OUT OF STOCK","received":0,"issued":0,"id":"D570","expiryDate":"2028-10-01","name":"Seba- Med soap"},{"unit":"","id":"D571","received":0,"status":"OUT OF STOCK","name":"Amaryl 4mg","issued":0,"balance":0,"reorder":0,"expiryDate":"2027-06-01","opening":0,"location":""},{"location":"","name":"Strepsils Vit C 100 MG","opening":0,"reorder":0,"issued":0,"balance":0,"status":"OUT OF STOCK","unit":"","received":0,"id":"D572","expiryDate":"2028-10-01"},{"expiryDate":"2028-02-01","location":"","unit":"","issued":0,"reorder":0,"status":"OUT OF STOCK","opening":0,"balance":0,"id":"D573","received":0,"name":"Betnovate Cream 30 g"},{"status":"OUT OF STOCK","id":"D574","name":"Atrovent 500 mg","location":"","balance":0,"unit":"","received":0,"expiryDate":"2027-06-01","issued":0,"opening":0,"reorder":0},{"expiryDate":"2029-02-01","issued":0,"received":0,"name":"Bells baby cough","id":"D575","opening":0,"reorder":0,"unit":"","status":"OUT OF STOCK","balance":0,"location":""},{"status":"OUT OF STOCK","received":0,"name":"Zoladex LA 10.8 mg","expiryDate":"2028-10-01","id":"D576","issued":0,"balance":0,"opening":0,"unit":"","reorder":0,"location":""},{"issued":0,"name":"Exforge 10/320","expiryDate":"2028-10-01","id":"D577","location":"","opening":0,"unit":"","reorder":0,"status":"OUT OF STOCK","received":0,"balance":0},{"reorder":0,"expiryDate":"2028-01-01","location":"","opening":0,"unit":"","issued":0,"balance":0,"id":"D578","name":"Nexium 20 mg","received":0,"status":"OUT OF STOCK"},{"location":"","opening":0,"reorder":0,"issued":0,"balance":0,"name":"Children cough syrup 1 year +","status":"OUT OF STOCK","received":0,"expiryDate":"2029-05-01","id":"D579","unit":""},{"issued":0,"received":0,"name":"Uperio 100mg","expiryDate":"2029-02-01","status":"OUT OF STOCK","opening":0,"reorder":0,"location":"","balance":0,"unit":"","id":"D580"},{"reorder":0,"opening":0,"location":"","issued":0,"expiryDate":"2029-05-01","unit":"","balance":0,"id":"D581","received":0,"name":"Menthodex 200 ml","status":"OUT OF STOCK"},{"unit":"","received":0,"id":"D582","balance":0,"reorder":0,"opening":0,"expiryDate":"2029-02-01","status":"OUT OF STOCK","name":"Menthodex 100 ml","issued":0,"location":""},{"unit":"","status":"OUT OF STOCK","location":"","expiryDate":"2028-02-01","id":"D583","received":0,"balance":0,"name":"Nexium 40 mg Tb","reorder":0,"issued":0,"opening":0},{"received":0,"balance":0,"status":"OUT OF STOCK","unit":"","reorder":0,"opening":0,"id":"D584","location":"","name":"Omer MMT 150 ml","issued":0,"expiryDate":"2027-07-01"},{"issued":0,"id":"D585","name":"Expectorant Cough Mixture 150 ml","received":0,"expiryDate":"2028-08-01","opening":0,"reorder":0,"unit":"","status":"OUT OF STOCK","location":"","balance":0},{"status":"OUT OF STOCK","balance":0,"id":"D586","name":"Astymin-3 200 ml","location":"","opening":0,"reorder":0,"unit":"","received":0,"expiryDate":"2028-02-01","issued":0},{"name":"Water for Injection 10 ml","opening":0,"reorder":0,"expiryDate":"2030-09-01","issued":0,"location":"","balance":0,"id":"D587","status":"OUT OF STOCK","unit":"","received":0},{"status":"OUT OF STOCK","balance":0,"received":0,"name":"Brufen Paedialite 3+ 200ml","opening":0,"reorder":0,"location":"","unit":"","issued":0,"expiryDate":"2028-01-01","id":"D588"},{"issued":0,"id":"D589","received":0,"name":"Gamok 600","expiryDate":"2027-09-01","location":"","opening":0,"reorder":0,"unit":"","status":"OUT OF STOCK","balance":0},{"location":"","unit":"","reorder":0,"opening":0,"balance":0,"issued":0,"id":"D590","status":"OUT OF STOCK","received":0,"expiryDate":"2028-03-01","name":"Maalox 250 ML"},{"id":"D591","name":"Artemeter INJ","status":"OUT OF STOCK","location":"","issued":0,"balance":0,"unit":"","opening":0,"reorder":0,"received":0,"expiryDate":"2029-04-01"},{"status":"OUT OF STOCK","expiryDate":"2028-03-01","balance":0,"name":"Ponstan Forte 500 mg","location":"","opening":0,"reorder":0,"unit":"","id":"D592","received":0,"issued":0},{"unit":"","status":"OUT OF STOCK","location":"","expiryDate":"2027-12-01","balance":0,"id":"D593","name":"Arfan 40/240 mg TB","received":0,"reorder":0,"issued":0,"opening":0},{"balance":0,"unit":"","received":0,"reorder":0,"opening":0,"status":"OUT OF STOCK","location":"","issued":0,"name":"Zithromax capsules","id":"D594","expiryDate":"2027-07-01"},{"opening":0,"issued":0,"reorder":0,"name":"Vermox Oral suspension 30ml","received":0,"balance":0,"id":"D595","unit":"","expiryDate":"2029-03-01","status":"OUT OF STOCK","location":""},{"unit":"","reorder":0,"opening":0,"id":"D596","issued":0,"balance":0,"received":0,"name":"Phytomenadione Vitamin K (VEGA)","expiryDate":"2028-03-01","location":"","status":"OUT OF STOCK"},{"balance":0,"id":"D597","status":"OUT OF STOCK","unit":"","received":0,"reorder":0,"opening":0,"name":"Calprofen Syrup","expiryDate":"2027-12-01","location":"","issued":0},{"status":"OUT OF STOCK","name":"Artesunate injection 120 (Maliinate)","location":"","balance":0,"unit":"","issued":0,"opening":0,"received":0,"expiryDate":"2029-03-01","reorder":0,"id":"D598"},{"reorder":0,"opening":0,"expiryDate":"2030-10-01","issued":0,"id":"D599","received":0,"unit":"","balance":0,"location":"","name":"Bisoprolol  10 mg  (SANDOZ)","status":"OUT OF STOCK"},{"balance":0,"name":"Bisoprolol 5 mg (SANDOZ)","status":"OUT OF STOCK","opening":0,"reorder":0,"expiryDate":"2030-04-01","location":"","issued":0,"unit":"","received":0,"id":"D600"},{"unit":"","balance":0,"id":"D601","received":0,"status":"OUT OF STOCK","expiryDate":"2030-08-01","reorder":0,"opening":0,"name":"Bisoprolol 10 mg (HILLCROSS)","location":"","issued":0},{"expiryDate":"2030-10-01","location":"","balance":0,"opening":0,"status":"OUT OF STOCK","reorder":0,"name":"Bisoprolol 2.5 mg (HILLCROSS)","id":"D602","issued":0,"received":0,"unit":""},{"unit":"","id":"D603","issued":0,"received":0,"reorder":0,"name":"Bisoprolol 2.5 mg (IPCA)","opening":0,"expiryDate":"2028-08-01","status":"OUT OF STOCK","balance":0,"location":""},{"status":"OUT OF STOCK","id":"D604","location":"","name":"Bisoprolol 5 mg (IPCA)","received":0,"balance":0,"expiryDate":"2028-01-01","unit":"","issued":0,"opening":0,"reorder":0},{"reorder":0,"received":0,"opening":0,"issued":0,"expiryDate":"2028-01-01","balance":0,"unit":"","location":"","id":"D605","status":"OUT OF STOCK","name":"Bisoprolol 10 mg (IPCA)"},{"unit":"","balance":0,"reorder":0,"received":0,"opening":0,"status":"OUT OF STOCK","id":"D606","expiryDate":"2031-02-01","name":"Testosterone Enanthate 250mg injection","issued":0,"location":""},{"issued":0,"name":"Sustanon 250mg/ml","location":"","expiryDate":"2028-10-01","opening":0,"received":0,"reorder":0,"id":"D607","unit":"","status":"OUT OF STOCK","balance":0},{"received":0,"status":"OUT OF STOCK","balance":0,"opening":0,"reorder":0,"name":"Livolin Forte","location":"","expiryDate":"2027-10-01","issued":0,"id":"D608","unit":""},{"expiryDate":"2030-09-01","unit":"","status":"OUT OF STOCK","location":"","received":0,"balance":0,"name":"Enat 400","id":"D609","reorder":0,"issued":0,"opening":0},{"balance":0,"opening":0,"location":"","status":"OUT OF STOCK","reorder":0,"name":"Imipramine Tablets 25mg","id":"D610","issued":0,"unit":"","expiryDate":"2027-08-01","received":0},{"issued":0,"id":"D611","name":"Azithromycin 15ml","expiryDate":"2027-01-01","received":0,"opening":0,"reorder":0,"unit":"","status":"OUT OF STOCK","location":"","balance":0},{"expiryDate":"2027-02-01","balance":0,"status":"OUT OF STOCK","unit":"","id":"D612","reorder":0,"location":"","opening":0,"received":0,"name":"Defron-100","issued":0},{"unit":"","id":"D613","issued":0,"expiryDate":"2028-10-01","location":"","reorder":0,"name":"Glimepride Tablets 2mg B&B","opening":0,"received":0,"status":"OUT OF STOCK","balance":0},{"status":"OUT OF STOCK","balance":0,"name":"Esomeprazole 20mg gastro-resistance","opening":0,"location":"","reorder":0,"expiryDate":"2028-09-01","unit":"","issued":0,"id":"D614","received":0},{"opening":0,"reorder":0,"issued":0,"location":"","name":"LG Glizone 30","expiryDate":"2028-10-01","id":"D615","balance":0,"unit":"","status":"OUT OF STOCK","received":0},{"opening":0,"reorder":0,"issued":0,"balance":0,"name":"Itracim 100mg","received":0,"expiryDate":"2027-12-01","id":"D616","status":"OUT OF STOCK","location":"","unit":""},{"reorder":0,"opening":0,"location":"","issued":0,"id":"D617","unit":"","balance":0,"expiryDate":"2027-04-01","received":0,"name":"Abbvie FML Liquifilm 0.1%","status":"OUT OF STOCK"},{"expiryDate":"2028-12-01","name":"Naklofen Duo 75mg","issued":0,"received":0,"status":"OUT OF STOCK","opening":0,"unit":"","reorder":0,"location":"","balance":0,"id":"D618"},{"id":"D619","balance":0,"unit":"","reorder":0,"opening":0,"status":"OUT OF STOCK","location":"","expiryDate":"2029-03-01","issued":0,"name":"Multivitamin Tablet 500 mg","received":0},{"expiryDate":"2029-08-01","opening":0,"reorder":0,"location":"","balance":0,"issued":0,"name":"B-CO Tb 500 mg","status":"OUT OF STOCK","id":"D620","received":0,"unit":""},{"status":"OUT OF STOCK","balance":0,"name":"Enacin-C 300 MG CAPS","location":"","opening":0,"reorder":0,"received":0,"id":"D621","unit":"","issued":0,"expiryDate":"2028-04-01"},{"reorder":20,"unit":"Vials","opening":0,"location":"G-4-1","issued":5,"id":"D625","balance":45,"name":"Vecuronium 10mg","received":50,"status":"OK","expiryDate":"2027-09-01"}],"receivingData":[{"expiryDate":"","date":"2026-10-14","batch":"Null","id":1792000671364.5137,"location":"H-2-2","supplier":"Best Aid","unit":"Packs","qty":250,"receivedBy":"Godfred","drug":"Amoxicillin Capsules 500 mg UK"},{"expiryDate":"2027-09-01","supplier":"Crescent Chemist","batch":"","qty":50,"date":"2026-10-14","location":"G-4-1","drug":"Vecuronium 10mg","id":1791990809543.1062,"receivedBy":"Godfred","unit":"Vials"},{"unit":"Packs","id":1791990405082.564,"location":"I-3-1","receivedBy":"Godfred","supplier":"","batch":"","drug":"Gliclazide Tab 80mg Crescent","date":"2026-10-14","qty":120,"expiryDate":"2027-09-01"},{"drug":"Wellwomam Original.","location":"G-1-1","expiryDate":"2028-10-01","qty":100,"supplier":"","unit":"Packs","id":1791990405082.6921,"receivedBy":"Godfred","date":"2026-10-14","batch":""},{"receivedBy":"Godfred","qty":1000,"date":"2026-10-14","drug":"Amlodipine 10 mg Teva","supplier":"","batch":"","location":"F-3-1","id":1791990405082.1694,"expiryDate":"2028-06-01","unit":"Packs"},{"drug":"Orlistat 120 mg  capsules","unit":"Packs","receivedBy":"Godfred","batch":"","qty":90,"id":1791990405082.1748,"expiryDate":"2028-03-01","location":"H-1-2","supplier":"","date":"2026-10-14"},{"receivedBy":"Godfred","id":1791990405082.7375,"qty":500,"batch":"","date":"2026-10-14","supplier":"","drug":"Olive oil Ear drops 10 ml","unit":"Packs","expiryDate":"2028-11-01","location":"F-1-3"},{"unit":"Packs","expiryDate":"2029-04-01","id":1791990405082.7317,"drug":"Spironolactone 100 mg TB","date":"2026-10-14","supplier":"Crescent Chemist","qty":50,"location":"Cross Dock","batch":"","receivedBy":"Godfred"},{"unit":"Packs","id":1791990405082.5498,"location":"H-2-2","expiryDate":"2028-04-01","supplier":"World Wide Healthcare","batch":"","drug":"Thymair Denk","date":"2026-10-13","qty":180,"receivedBy":"Godfred"},{"date":"2026-10-13","receivedBy":"Godfred","id":1791990405082.4275,"unit":"Packs","batch":"","location":"A1","qty":100,"supplier":"World Wide Healthcare","drug":"Nexium inj 40 mg","expiryDate":"2027-12-01"},{"batch":"","date":"2026-10-13","receivedBy":"Godfred","location":"G-4-1","expiryDate":"2028-10-01","unit":"Vials","drug":"Meronem injection 500 mg","qty":500,"supplier":"World Wide Healthcare","id":1791990405082.3533},{"unit":"Packs","location":"I-4-1","id":1791990405082.3474,"expiryDate":"2028-01-01","batch":"","drug":"Augmentin Tablet 1G","supplier":"World Wide Healthcare","qty":88,"date":"2026-10-13","receivedBy":"Godfred"},{"supplier":"East Cantonement","location":"Cross Dock","expiryDate":"","qty":10,"date":"2026-10-13","drug":"Febuxostat","receivedBy":"Godfred","id":1791990405081.8489,"batch":"","unit":"Packs"},{"expiryDate":"2028-07-01","batch":"","date":"2026-10-13","supplier":"East Cantonement","unit":"Packs","drug":"Fluconadenk 150 mg","qty":80,"id":1791990405081.5796,"receivedBy":"Godfred","location":"C0"},{"id":1791990405081.4294,"qty":56,"location":"F-2-1","supplier":"East Cantonement","date":"2026-10-13","expiryDate":"","receivedBy":"Godfred","batch":"","drug":"Metformin Denk 1000 mg 30's Tablet","unit":"Packs"},{"date":"2026-10-13","receivedBy":"Godfred","batch":"","id":1791990405081.5376,"unit":"Vials","location":"G-4-1","supplier":"Golden Blue","drug":"Meronem injection 1G","expiryDate":"2029-04-01","qty":200},{"batch":"","date":"2026-10-12","receivedBy":"Godfred","supplier":"Medichem","unit":"Packs","drug":"Somazina","qty":63,"id":1791990405080.6846,"expiryDate":"","location":"E0"},{"expiryDate":"2028-11-01","date":"2026-10-12","batch":"","location":"A1","id":1791990405080.84,"supplier":"World Wide Healthcare","unit":"Packs","qty":20,"receivedBy":"Godfred","drug":"Rocephin inj 2G"},{"qty":360,"expiryDate":"2028-07-01","location":"C0","supplier":"East Cantonement","date":"2026-10-12","id":1791990405080.9934,"drug":"Fluconadenk 150 mg","batch":"","receivedBy":"Godfred","unit":"Packs"},{"expiryDate":"2029-02-01","qty":60,"date":"2026-10-12","drug":"Tavanic TB 500 mg","supplier":"East Cantonement","batch":"","location":"G-3-2","receivedBy":"Godfred","id":1791990405080.3816,"unit":"Packs"},{"date":"2026-10-12","location":"Cross Dock","supplier":"","id":1791990405078.6768,"receivedBy":"Godfred","qty":150,"unit":"Packs","batch":"","expiryDate":"","drug":"Cerave moisturing cream"}],"issuingData":[{"batch":"Kobby","location":"H-2-2","qty":200,"date":"2026-10-14","issuedBy":"Godfred","drug":"Amoxicillin Capsules 500 mg UK","recipient":"Asafo Boakye Hospital","id":1792000791356.8987,"unit":"Packs"},{"recipient":"Asafo Boakye Hospital","unit":"Packs","drug":"Cerave moisturing cream","date":"2026-10-14","location":"Cross Dock","batch":"","qty":150,"id":1792000232244.7905,"issuedBy":"Godfred"},{"qty":5,"drug":"Vecuronium 10mg","unit":"Vials","id":1791990887458.6792,"location":"G-4-1","date":"2026-10-14","recipient":"Asokore Mampong Pharmacy Unit. (S.A.A.L)","issuedBy":"Godfred","batch":""}],"returnsData":[],"customLocations":["F-4-3","H-3-3","A0","A1","A2","B0","B1","B2","C0","C1","C2","D0","D1","D2","Down","E0","E1","E2","F-1-1","F-1-2","F-1-3","F-2-1","F-2-2","F-2-3","F-3-1","F-3-2","F-3-3","F-4-1","F-4-2","Fridge","G-1-1","G-1-2","G-1-3","G-2-1","G-2-2","G-2-3","G-3-1","G-3-2","G-3-3","G-4-1","G-4-2","G-4-3","H-3-1","H-3-2","H-4-1","H-4-2","H-4-3","I-1-1","I-1-2","I-1-3","I-2-1","I-2-2","I-2-3","I-3-1","I-3-2","I-3-3","I-4-1","I-4-2","I-4-3","IR","Stairs","Cross Dock","EXP ZONE","H-2-2","H-2-3","crossdock","H-2-1","H-1-3","G0","F0","H-1-2","H-1-1","Soffit","F -3 2","H0","G0,C2"],"customUnits":["Bottle","Bottles","Pessaries","30","Tubes","Boxes","Containers","Strips","Pieces"],"customSuppliers":["UNICOM","Oson's Chemist","Adiyiah Pharmaceuticals","TVS","Dubai","East Cantonement","Uri Pharma","Aldor Supplies","Intravaneous","Atlantic","Ernest Chemist","Panacea","Lansah Chemist","M&G","Supra Pharma","Liboat Pharma","Hope Alive Resources","Crescent Chemist","World Wide Healthcare","Amprapharma","Aramex","Tridem","Ricomons Pharmacy","Gokals","Hills","Cedar Point Chemist","Mampong Stores(S.A.A.L)","Mr. Paul","Best Aid","Sanofi","Popular","Tianjin","Pharm -Inter Belgium","KRKA","Exeter","Vega","Teva","Accord","Alberta","Gilat","Unisearch","Osons","United Kingdom","Oson","Kotoku Mdcl Cntr","Eugene","Sumark","skynet","Kelmed","Medichem","Golden Blue"],"customReceivedBy":["Godfred","Sheriff","Baffour Kyei","Fattahu","Gifty","Saviour","Aaron"],"customRecipients":["Asokore Mampong Pharmacy Unit. (S.A.A.L)","Customer","DHL","Asafo Boakye Hospital"],"savedAt":"2026-10-14T18:13:55.876Z"}</script>
 
 <script>
@@ -3791,6 +3844,7 @@ function startFirestoreSync() {
         receivingData = data.receivingData || [];
         issuingData = data.issuingData || [];
         returnsData = data.returnsData || [];
+        normalizeInventory();
         customLocations = data.customLocations || customLocations;
         customUnits = data.customUnits || customUnits;
         customSuppliers = data.customSuppliers || customSuppliers;
@@ -4267,6 +4321,441 @@ async function rejectRequisition(id) {
     }
 }
 
+// ============================================================
+// EXPIRY BATCHES
+// Every drug can hold several expiry dates, each with its own quantity:
+//   item.expiryBatches = [{ expiry: "YYYY-MM-DD" | "", qty: n }, ...]
+// item.expiryDate is always the EARLIEST expiry that still has stock (the "current" expiry),
+// so reports, search, export and the AI helper keep working unchanged.
+// When a batch runs out it is removed, and the next-earliest expiry becomes the current one.
+// ============================================================
+function fmtExpiry(e) { return e ? e : "no expiry"; }
+
+function compareExpiry(a, b) {
+    if (!a && !b) return 0;
+    if (!a) return 1;
+    if (!b) return -1;
+    return a < b ? -1 : (a > b ? 1 : 0);
+}
+
+function syncItemExpiry(item, clearIfEmpty) {
+    const merged = new Map();
+    for (const b of (Array.isArray(item.expiryBatches) ? item.expiryBatches : [])) {
+        const q = parseInt(b.qty) || 0;
+        if (q <= 0) continue;
+        const key = b.expiry || "";
+        merged.set(key, (merged.get(key) || 0) + q);
+    }
+    item.expiryBatches = Array.from(merged.entries()).map(([expiry, qty]) => ({ expiry: expiry, qty: qty }));
+    item.expiryBatches.sort((a, b) => compareExpiry(a.expiry, b.expiry));
+    if (item.expiryBatches.length > 0) {
+        const dated = item.expiryBatches.find(b => b.expiry);
+        item.expiryDate = dated ? dated.expiry : "";
+    } else if (clearIfEmpty) {
+        item.expiryDate = "";
+    }
+}
+
+// Makes sure item.expiryBatches exists and adds up to item.balance (legacy items get one batch).
+function normalizeItemBatches(item) {
+    const bal = Math.max(0, parseInt(item.balance) || 0);
+    if (!Array.isArray(item.expiryBatches)) {
+        item.expiryBatches = bal > 0 ? [{ expiry: item.expiryDate || "", qty: bal }] : [];
+    }
+    syncItemExpiry(item, false);
+    const sum = item.expiryBatches.reduce((s, b) => s + b.qty, 0);
+    if (sum < bal) {
+        item.expiryBatches.push({ expiry: item.expiryDate || "", qty: bal - sum });
+    } else if (sum > bal) {
+        let excess = sum - bal;
+        for (const b of item.expiryBatches) {
+            const take = Math.min(b.qty, excess);
+            b.qty -= take;
+            excess -= take;
+            if (excess <= 0) break;
+        }
+    }
+    syncItemExpiry(item, false);
+}
+
+function normalizeInventory() {
+    if (!Array.isArray(inventoryData)) return;
+    inventoryData.forEach(normalizeItemBatches);
+}
+
+function getBatches(item) {
+    if (!Array.isArray(item.expiryBatches)) normalizeItemBatches(item);
+    return item.expiryBatches.filter(b => b.qty > 0);
+}
+
+function describeBatches(item) {
+    return getBatches(item).map(b => `${b.qty} (${fmtExpiry(b.expiry)})`).join(" · ");
+}
+
+// A receipt WITHOUT an expiry date joins the current expiry (same as before this feature).
+function addBatchQty(item, expiry, qty) {
+    if (!(qty > 0)) return;
+    if (!Array.isArray(item.expiryBatches)) item.expiryBatches = [];
+    if (!expiry) {
+        const current = item.expiryBatches.filter(b => b.qty > 0).sort((a, b) => compareExpiry(a.expiry, b.expiry))[0];
+        expiry = current ? current.expiry : (item.expiryDate || "");
+    }
+    item.expiryBatches.push({ expiry: expiry || "", qty: qty });
+    syncItemExpiry(item, false);
+}
+
+// Takes qty out of the given expiry first; anything left over comes from the earliest expiries.
+function removeBatchQty(item, expiry, qty) {
+    let left = qty;
+    const batches = Array.isArray(item.expiryBatches) ? item.expiryBatches : [];
+    const exact = batches.find(b => (b.expiry || "") === (expiry || "") && b.qty > 0);
+    if (exact) {
+        const t = Math.min(exact.qty, left);
+        exact.qty -= t;
+        left -= t;
+    }
+    if (left > 0) {
+        for (const b of batches.slice().sort((a, b) => compareExpiry(a.expiry, b.expiry))) {
+            if (left <= 0) break;
+            const t = Math.min(b.qty, left);
+            b.qty -= t;
+            left -= t;
+        }
+    }
+    syncItemExpiry(item, true);
+}
+
+// First-expiry-first-out split of a quantity.
+function allocateFEFO(item, qty) {
+    let left = qty;
+    const out = [];
+    for (const b of getBatches(item)) {
+        if (left <= 0) break;
+        const t = Math.min(b.qty, left);
+        out.push({ expiry: b.expiry || "", qty: t });
+        left -= t;
+    }
+    return out;
+}
+
+function validateAllocations(item, alloc, qty) {
+    let total = 0;
+    const batches = getBatches(item);
+    for (const a of alloc) {
+        const b = batches.find(x => (x.expiry || "") === (a.expiry || ""));
+        const have = b ? b.qty : 0;
+        if (have < a.qty) return { ok: false, message: `only ${have} left for expiry ${fmtExpiry(a.expiry)} (wanted ${a.qty})` };
+        total += a.qty;
+    }
+    if (total !== qty) return { ok: false, message: `the chosen expiry quantities add up to ${total}, not ${qty}` };
+    return { ok: true, message: "" };
+}
+
+function deductAllocations(item, alloc) {
+    for (const a of alloc) {
+        const b = item.expiryBatches.find(x => (x.expiry || "") === (a.expiry || ""));
+        if (b) b.qty -= a.qty;
+    }
+    syncItemExpiry(item, true);   // finished batches disappear; the next expiry becomes the current one
+}
+
+// ---------------- shared pop-up (receive by expiry / issue from expiry / balance breakdown)
+let expModal = null;
+
+function openExpModal() {
+    document.getElementById("expModalOverlay").style.display = "flex";
+    renderExpModal();
+}
+
+function closeExpModal() {
+    document.getElementById("expModalOverlay").style.display = "none";
+    expModal = null;
+}
+
+function expModalTotal() {
+    return expModal ? expModal.rows.reduce((s, r) => s + (parseInt(r.qty) || 0), 0) : 0;
+}
+
+function expBadge(expiry) {
+    const info = getExpiryStatus(expiry);
+    return `<span class="badge ${info.class}">${info.status}</span>`;
+}
+
+function renderExpModal() {
+    if (!expModal) return;
+    const m = expModal;
+    const unit = m.unit ? " " + escapeHtml(m.unit) : "";
+    document.getElementById("expModalError").textContent = "";
+    document.getElementById("expModalUnit").textContent = m.unit || "";
+    const addWrap = document.getElementById("expModalAddWrap");
+    const applyBtn = document.getElementById("expModalApplyBtn");
+    const cancelBtn = document.getElementById("expModalCancelBtn");
+    let html = "";
+
+    if (m.mode === "receive") {
+        document.getElementById("expModalTitle").textContent = "📅 Receive by expiry date";
+        document.getElementById("expModalSub").textContent = `${m.drug} — enter each quantity with its own expiry date. The total becomes the quantity received.`;
+        addWrap.style.display = "block";
+        applyBtn.style.display = "";
+        applyBtn.textContent = "Apply";
+        cancelBtn.textContent = "Cancel";
+        html += `<div class="exp-row exp-row-head"><span>Quantity${unit}</span><span>Expiry date</span><span></span></div>`;
+        m.rows.forEach((r, i) => {
+            html += `<div class="exp-row">
+                <input type="number" min="1" placeholder="Qty" value="${r.qty === "" || r.qty === undefined ? "" : r.qty}" oninput="expModalSet(${i}, 'qty', this.value)">
+                <input type="date" value="${escapeHtml(r.expiry || "")}" oninput="expModalSet(${i}, 'expiry', this.value)" onchange="expModalSet(${i}, 'expiry', this.value)">
+                <button type="button" class="exp-row-remove" title="Remove this row" onclick="expModalRemove(${i})">✖</button>
+            </div>`;
+        });
+    } else if (m.mode === "issue") {
+        document.getElementById("expModalTitle").textContent = "📅 Issue from which expiry?";
+        document.getElementById("expModalSub").textContent = `${m.drug} — enter how much to take from each expiry date. If you skip this, the earliest expiry is used first.`;
+        addWrap.style.display = "none";
+        applyBtn.style.display = "";
+        applyBtn.textContent = "Apply";
+        cancelBtn.textContent = "Cancel";
+        m.rows.forEach((r, i) => {
+            html += `<div class="exp-row exp-row-issue">
+                <div><strong>${escapeHtml(fmtExpiry(r.expiry))}</strong><div class="exp-sub">${expBadge(r.expiry)}</div></div>
+                <div class="exp-avail">${r.available}${unit} available</div>
+                <input type="number" min="0" max="${r.available}" placeholder="0" value="${r.qty === "" || r.qty === undefined ? "" : r.qty}" oninput="expModalSet(${i}, 'qty', this.value)">
+                <button type="button" class="exp-all" title="Take all of this expiry" onclick="expModalSet(${i}, 'qty', ${r.available}, true)">all</button>
+            </div>`;
+        });
+    } else {
+        document.getElementById("expModalTitle").textContent = "📅 Quantity left by expiry";
+        document.getElementById("expModalSub").textContent = m.drug;
+        addWrap.style.display = "none";
+        applyBtn.style.display = "none";
+        cancelBtn.textContent = "Close";
+        html += `<div class="exp-row exp-row-info exp-row-head"><span>Expiry date</span><span>Qty left</span><span>Days left</span><span>Status</span></div>`;
+        m.rows.forEach(r => {
+            const info = getExpiryStatus(r.expiry);
+            let days = "N/A";
+            if (info.daysLeft !== null) days = info.daysLeft < 0 ? `Expired ${Math.abs(info.daysLeft)} day(s) ago` : `${info.daysLeft} days`;
+            html += `<div class="exp-row exp-row-info">
+                <span><strong>${escapeHtml(fmtExpiry(r.expiry))}</strong></span>
+                <span><strong>${r.qty}</strong></span>
+                <span>${days}</span>
+                <span>${expBadge(r.expiry)}</span>
+            </div>`;
+        });
+    }
+    document.getElementById("expModalRows").innerHTML = html;
+    document.getElementById("expModalTotal").textContent = expModalTotal();
+}
+
+function expModalSet(i, field, value, rerender) {
+    if (!expModal) return;
+    expModal.rows[i][field] = value;
+    if (rerender) { renderExpModal(); return; }
+    document.getElementById("expModalTotal").textContent = expModalTotal();
+}
+
+function expModalAddRow() {
+    if (!expModal || expModal.mode !== "receive") return;
+    expModal.rows.push({ qty: "", expiry: "" });
+    renderExpModal();
+}
+
+function expModalRemove(i) {
+    if (!expModal) return;
+    expModal.rows.splice(i, 1);
+    if (expModal.rows.length === 0) expModal.rows.push({ qty: "", expiry: "" });
+    renderExpModal();
+}
+
+function expModalError(msg) {
+    document.getElementById("expModalError").textContent = msg;
+}
+
+function expModalApply() {
+    if (!expModal) return;
+    const m = expModal;
+
+    if (m.mode === "receive") {
+        const rows = m.rows.map(r => ({ qty: parseInt(r.qty) || 0, expiry: r.expiry || "" }));
+        if (rows.some(r => r.qty <= 0)) { expModalError("Enter a quantity for every row (or remove the empty rows)."); return; }
+        if (rows.some(r => !r.expiry)) { expModalError("Pick an expiry date for every row."); return; }
+        const merged = new Map();
+        rows.forEach(r => merged.set(r.expiry, (merged.get(r.expiry) || 0) + r.qty));
+        const splits = Array.from(merged.entries()).map(([expiry, qty]) => ({ expiry: expiry, qty: qty }))
+            .sort((a, b) => compareExpiry(a.expiry, b.expiry));
+        const total = splits.reduce((s, r) => s + r.qty, 0);
+
+        if (m.pending) {
+            const r = m.pending;
+            if (splits.length === 1) { delete r.expirySplits; r.qty = splits[0].qty; r.expiryDate = splits[0].expiry; }
+            else { r.expirySplits = splits; r.qty = total; r.expiryDate = splits[0].expiry; }
+            closeExpModal();
+            renderPendingReceiving();
+        } else {
+            closeExpModal();
+            if (splits.length === 1) {
+                receiveSplits = [];
+                applyReceiveSplitsToForm();
+                document.getElementById("receiptQty").value = splits[0].qty;
+                document.getElementById("receiptExpiry").value = splits[0].expiry;
+                updateReceivePlus();
+            } else {
+                receiveSplits = splits;
+                applyReceiveSplitsToForm();
+            }
+        }
+        return;
+    }
+
+    if (m.mode === "issue") {
+        const picked = m.rows.map(r => ({ expiry: r.expiry || "", qty: parseInt(r.qty) || 0, available: r.available })).filter(r => r.qty > 0);
+        if (picked.length === 0) { expModalError("Enter a quantity for at least one expiry date."); return; }
+        const over = picked.find(r => r.qty > r.available);
+        if (over) { expModalError(`Only ${over.available} available for expiry ${fmtExpiry(over.expiry)}.`); return; }
+        const alloc = picked.map(r => ({ expiry: r.expiry, qty: r.qty }));
+        const total = alloc.reduce((s, r) => s + r.qty, 0);
+        if (m.pending) {
+            m.pending.allocations = alloc;
+            m.pending.qty = total;
+            closeExpModal();
+            renderPendingIssuing();
+        } else {
+            issueAllocations = alloc;
+            issueAllocDrug = m.drug;
+            closeExpModal();
+            updateIssueAvailability();
+        }
+    }
+}
+
+document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && expModal) closeExpModal();
+});
+
+// Balance breakdown (Inventory + Expiry Tracker): only drugs with 2+ expiry dates are clickable.
+function showExpiryBreakdown(id) {
+    const item = inventoryData.find(i => i.id === id);
+    if (!item) return;
+    expModal = {
+        mode: "info",
+        drug: `${item.name} — total ${item.balance} ${item.unit || ""}`.trim(),
+        unit: item.unit || "",
+        rows: getBatches(item).map(b => ({ expiry: b.expiry || "", qty: b.qty }))
+    };
+    openExpModal();
+}
+
+function balanceCellHtml(item) {
+    return getBatches(item).length > 1
+        ? `<strong class="balance-link" title="Click to see the quantity left for each expiry date" onclick="showExpiryBreakdown('${item.id}')">${item.balance} ▾</strong>`
+        : `<strong>${item.balance}</strong>`;
+}
+
+// ---------------- receiving form: split by expiry
+let receiveSplits = [];
+
+function updateReceivePlus() {
+    const btn = document.getElementById("receiptPlusBtn");
+    if (!btn) return;
+    const drug = document.getElementById("receiptDrug").value.trim();
+    const singleExpiry = document.getElementById("receiptExpiry").value;
+    // Shown once a drug is chosen; hidden when a single expiry date has been typed in (one expiry = no plus).
+    btn.style.display = (drug && (receiveSplits.length > 0 || !singleExpiry)) ? "" : "none";
+}
+
+function applyReceiveSplitsToForm() {
+    const qtyEl = document.getElementById("receiptQty");
+    const expEl = document.getElementById("receiptExpiry");
+    const sum = document.getElementById("receiveSplitSummary");
+    if (receiveSplits.length > 0) {
+        const total = receiveSplits.reduce((s, r) => s + r.qty, 0);
+        qtyEl.value = total;
+        qtyEl.readOnly = true;
+        expEl.value = "";
+        expEl.disabled = true;
+        sum.innerHTML = `📅 ${receiveSplits.length} expiry dates: ` +
+            receiveSplits.map(s => `${s.qty} × ${escapeHtml(s.expiry)}`).join(" · ") +
+            ` <a href="#" onclick="clearReceiveSplits(); return false;">✖ clear</a>`;
+        sum.style.display = "block";
+    } else {
+        qtyEl.readOnly = false;
+        expEl.disabled = false;
+        sum.innerHTML = "";
+        sum.style.display = "none";
+    }
+    updateReceivePlus();
+}
+
+function clearReceiveSplits() {
+    receiveSplits = [];
+    applyReceiveSplitsToForm();
+}
+
+function openReceiveSplitModal(pending) {
+    let drug, unit, rows;
+    if (pending) {
+        drug = pending.drug;
+        unit = pending.unit;
+        rows = (pending.expirySplits && pending.expirySplits.length)
+            ? pending.expirySplits.map(s => ({ qty: s.qty, expiry: s.expiry }))
+            : [{ qty: pending.qty || "", expiry: pending.expiryDate || "" }, { qty: "", expiry: "" }];
+    } else {
+        drug = document.getElementById("receiptDrug").value.trim();
+        unit = document.getElementById("receiptUnit").value.trim();
+        rows = receiveSplits.length
+            ? receiveSplits.map(s => ({ qty: s.qty, expiry: s.expiry }))
+            : [{ qty: parseInt(document.getElementById("receiptQty").value) || "", expiry: "" }, { qty: "", expiry: "" }];
+    }
+    if (!drug) { alert("Enter the drug name first."); return; }
+    expModal = { mode: "receive", pending: pending || null, drug: drug, unit: unit, rows: rows };
+    openExpModal();
+}
+
+// ---------------- issuing form: choose which expiry to take from
+let issueAllocations = [];
+let issueAllocDrug = "";
+
+function refreshIssueAllocUI() {
+    const qtyEl = document.getElementById("issueQty");
+    const sum = document.getElementById("issueAllocSummary");
+    if (!qtyEl || !sum) return;
+    if (issueAllocations.length > 0) {
+        const total = issueAllocations.reduce((s, a) => s + a.qty, 0);
+        qtyEl.value = total;
+        qtyEl.readOnly = true;
+        sum.innerHTML = `📅 Issuing from: ` +
+            issueAllocations.map(a => `${a.qty} × ${escapeHtml(fmtExpiry(a.expiry))}`).join(" · ") +
+            ` <a href="#" onclick="clearIssueAllocations(); return false;">✖ clear</a>`;
+        sum.style.display = "block";
+    } else {
+        qtyEl.readOnly = false;
+        sum.innerHTML = "";
+        sum.style.display = "none";
+    }
+}
+
+function clearIssueAllocations() {
+    issueAllocations = [];
+    issueAllocDrug = "";
+    refreshIssueAllocUI();
+    if (typeof updateIssueAvailability === "function") updateIssueAvailability();
+}
+
+function openIssueAllocModal(pending) {
+    const drug = pending ? pending.drug : document.getElementById("issueDrug").value.trim();
+    const item = inventoryData.find(i => i.name.toLowerCase() === (drug || "").toLowerCase());
+    if (!item) return;
+    const batches = getBatches(item);
+    if (batches.length === 0) return;
+    const existing = pending ? (pending.allocations || []) : issueAllocations;
+    const wanted = Math.min(pending ? (pending.qty || 0) : (parseInt(document.getElementById("issueQty").value) || 0), item.balance);
+    const prefill = existing.length ? existing : (wanted > 0 ? allocateFEFO(item, wanted) : []);
+    const rows = batches.map(b => {
+        const p = prefill.find(x => (x.expiry || "") === (b.expiry || ""));
+        return { expiry: b.expiry || "", available: b.qty, qty: p ? p.qty : "" };
+    });
+    expModal = { mode: "issue", pending: pending || null, drug: item.name, unit: item.unit || "", rows: rows };
+    openExpModal();
+}
+
 function computeStockStatus(balance, reorder) {
     if (balance <= 0) return "OUT OF STOCK";
     if (balance <= reorder) return "REORDER";
@@ -4351,6 +4840,7 @@ function loadAllData() {
         } else {
             returnsData = [];
         }
+        normalizeInventory();
     } catch (e) {
         console.warn('Error loading data:', e);
         inventoryData = [];
@@ -4427,6 +4917,7 @@ function executeClearInventory() {
                 item.received = 0;
                 item.issued = 0;
                 item.balance = 0;
+                item.expiryBatches = [];
             }
             if (clearLocation) item.location = "";
             if (clearUnit) item.unit = "";
@@ -4519,6 +5010,7 @@ function updateReceiveAvailability() {
         hint.textContent = "";
         hint.className = "field-hint";
         if (expiryHint) { expiryHint.textContent = ""; expiryHint.className = "field-hint"; }
+        updateReceivePlus();
         return;
     }
 
@@ -4530,7 +5022,10 @@ function updateReceiveAvailability() {
         hint.textContent = `📦 Currently in stock: ${item.balance} ${item.unit || ""} at ${item.location || "no location set"}`;
         hint.className = "field-hint";
         if (expiryHint) {
-            if (item.expiryDate) {
+            if (getBatches(item).length > 1) {
+                expiryHint.textContent = `📅 Expiries on file: ${describeBatches(item)}`;
+                expiryHint.className = "field-hint";
+            } else if (item.expiryDate) {
                 const expiryInfo = getExpiryStatus(item.expiryDate);
                 expiryHint.textContent = `📅 Current expiry on file: ${item.expiryDate}${expiryInfo.status === "EXPIRED" ? " (EXPIRED)" : ""}`;
                 expiryHint.className = expiryInfo.status === "EXPIRED" ? "field-hint warning" : "field-hint";
@@ -4544,6 +5039,7 @@ function updateReceiveAvailability() {
         hint.className = "field-hint warning";
         if (expiryHint) { expiryHint.textContent = ""; expiryHint.className = "field-hint"; }
     }
+    updateReceivePlus();
 }
 
 function addReceivingToPending() {
@@ -4562,6 +5058,16 @@ function addReceivingToPending() {
         return;
     }
 
+    let splits = null;
+    if (receiveSplits.length > 0) {
+        const total = receiveSplits.reduce((s, r) => s + r.qty, 0);
+        if (total !== qty) {
+            alert("The quantity doesn't match the expiry quantities. Click the ＋ to fix it.");
+            return;
+        }
+        splits = receiveSplits.map(s => ({ qty: s.qty, expiry: s.expiry }));
+    }
+
     pendingReceiving.push({
         pendingId: Date.now() + Math.random(),
         date: date,
@@ -4573,7 +5079,8 @@ function addReceivingToPending() {
         supplier: document.getElementById("receiptSupplier").value,
         courier: document.getElementById("receiptCourier").value.trim(),
         invoiceNo: document.getElementById("receiptInvoice").value.trim(),
-        expiryDate: document.getElementById("receiptExpiry").value,
+        expiryDate: splits ? splits[0].expiry : document.getElementById("receiptExpiry").value,
+        expirySplits: splits,
         receivedBy: document.getElementById("receiptBy").value
     });
 
@@ -4584,6 +5091,8 @@ function addReceivingToPending() {
     rememberReceivedByIfNew(document.getElementById("receiptBy").value.trim());
     renderPendingReceiving();
 
+    receiveSplits = [];
+    applyReceiveSplitsToForm();
     document.getElementById("receiptDrug").value = "";
     document.getElementById("receiptLocation").value = "";
     document.getElementById("receiptBatch").value = "";
@@ -4594,6 +5103,7 @@ function addReceivingToPending() {
     if (hint) { hint.textContent = ""; hint.className = "field-hint"; }
     const expiryHint = document.getElementById("receiveExpiryHint");
     if (expiryHint) { expiryHint.textContent = ""; expiryHint.className = "field-hint"; }
+    updateReceivePlus();
     document.getElementById("receiptDrug").focus();
 }
 
@@ -4604,6 +5114,7 @@ function renderPendingReceiving() {
     card.style.display = pendingReceiving.length > 0 ? "block" : "none";
     tbody.innerHTML = "";
     for (const r of pendingReceiving) {
+        const hasSplits = !!(r.expirySplits && r.expirySplits.length);
         const row = tbody.insertRow();
         const dateCell = row.insertCell(0);
         const dateInput = document.createElement("input");
@@ -4639,6 +5150,10 @@ function renderPendingReceiving() {
         qtyInput.className = "pending-qty-input";
         const stockItem = inventoryData.find(i => i.name.toLowerCase() === (r.drug || "").toLowerCase());
         if (stockItem) qtyInput.title = `Currently in stock: ${stockItem.balance} ${stockItem.unit || ""}`;
+        if (hasSplits) {
+            qtyInput.readOnly = true;
+            qtyInput.title = "Total of the expiry quantities — use the ✏️ in the Expiry column to change them";
+        }
         qtyInput.onchange = () => {
             const val = parseInt(qtyInput.value) || 0;
             if (val <= 0) { alert("Quantity must be greater than 0."); renderPendingReceiving(); return; }
@@ -4681,13 +5196,36 @@ function renderPendingReceiving() {
         invoiceCell.appendChild(invoiceInput);
 
         const expiryCell = row.insertCell(9);
-        const expiryInput = document.createElement("input");
-        expiryInput.type = "date";
-        expiryInput.value = r.expiryDate || "";
-        expiryInput.className = "pending-date-input";
-        if (stockItem && stockItem.expiryDate) expiryInput.title = `Current expiry on file: ${stockItem.expiryDate}`;
-        expiryInput.onchange = () => { r.expiryDate = expiryInput.value; };
-        expiryCell.appendChild(expiryInput);
+        if (hasSplits) {
+            const note = document.createElement("div");
+            note.className = "exp-split-note";
+            note.textContent = r.expirySplits.map(s => `${s.qty} × ${s.expiry}`).join(" · ");
+            expiryCell.appendChild(note);
+            const editBtn = document.createElement("button");
+            editBtn.type = "button";
+            editBtn.className = "qty-plus-btn small";
+            editBtn.textContent = "✏️";
+            editBtn.title = "Edit the expiry quantities";
+            editBtn.onclick = () => openReceiveSplitModal(r);
+            expiryCell.appendChild(editBtn);
+        } else {
+            const expiryInput = document.createElement("input");
+            expiryInput.type = "date";
+            expiryInput.value = r.expiryDate || "";
+            expiryInput.className = "pending-date-input";
+            if (stockItem && stockItem.expiryDate) expiryInput.title = `Current expiry on file: ${stockItem.expiryDate}`;
+            expiryInput.onchange = () => { r.expiryDate = expiryInput.value; renderPendingReceiving(); };
+            expiryCell.appendChild(expiryInput);
+            if (!r.expiryDate) {
+                const plusBtn = document.createElement("button");
+                plusBtn.type = "button";
+                plusBtn.className = "qty-plus-btn small";
+                plusBtn.textContent = "＋";
+                plusBtn.title = "More than one expiry date? Enter a quantity for each";
+                plusBtn.onclick = () => openReceiveSplitModal(r);
+                expiryCell.appendChild(plusBtn);
+            }
+        }
 
         row.insertCell(10).textContent = r.receivedBy || "";
         const actionCell = row.insertCell(11);
@@ -4713,7 +5251,13 @@ function clearPendingReceiving() {
 }
 
 function commitReceivingEntry(entry) {
-    receivingData.unshift({
+    const splitMode = !!(entry.expirySplits && entry.expirySplits.length);
+    const splits = splitMode
+        ? entry.expirySplits.map(s => ({ qty: parseInt(s.qty) || 0, expiry: s.expiry || "" }))
+        : [{ qty: entry.qty, expiry: entry.expiryDate || "" }];
+    const earliest = splits.map(s => s.expiry).filter(Boolean).sort()[0] || "";
+
+    const historyRow = {
         id: Date.now() + Math.random(),
         date: entry.date,
         drug: entry.drug,
@@ -4724,25 +5268,28 @@ function commitReceivingEntry(entry) {
         supplier: entry.supplier,
         courier: entry.courier || "",
         invoiceNo: entry.invoiceNo || "",
-        expiryDate: entry.expiryDate,
+        expiryDate: splitMode ? earliest : entry.expiryDate,
         receivedBy: entry.receivedBy
-    });
+    };
+    if (splitMode) historyRow.expirySplits = splits;
+    receivingData.unshift(historyRow);
 
     let found = false;
     for (let item of inventoryData) {
         if (item.name.toLowerCase() === entry.drug.toLowerCase()) {
+            normalizeItemBatches(item);   // split existing stock into expiry batches BEFORE the balance changes
             item.received += entry.qty;
             item.balance = item.opening + item.received - item.issued;
             item.status = computeStockStatus(item.balance, item.reorder);
             if (entry.location) item.location = entry.location;
             if (entry.unit) item.unit = entry.unit;
-            if (entry.expiryDate) item.expiryDate = entry.expiryDate;
+            for (const s of splits) addBatchQty(item, s.expiry, s.qty);
             found = true;
             break;
         }
     }
     if (!found) {
-        inventoryData.push({
+        const newItem = {
             id: generateId(),
             name: entry.drug,
             location: entry.location,
@@ -4753,8 +5300,11 @@ function commitReceivingEntry(entry) {
             unit: entry.unit,
             reorder: 20,
             status: computeStockStatus(entry.qty, 20),
-            expiryDate: entry.expiryDate
-        });
+            expiryDate: earliest,
+            expiryBatches: splits.map(s => ({ expiry: s.expiry, qty: s.qty }))
+        };
+        syncItemExpiry(newItem, false);
+        inventoryData.push(newItem);
     }
 }
 
@@ -4955,18 +5505,19 @@ function commitReturnEntry(entry) {
     let found = false;
     for (let item of inventoryData) {
         if (item.name.toLowerCase() === entry.drug.toLowerCase()) {
+            normalizeItemBatches(item);
             item.received += entry.qty;
             item.balance = item.opening + item.received - item.issued;
             item.status = computeStockStatus(item.balance, item.reorder);
             if (entry.location) item.location = entry.location;
             if (entry.unit) item.unit = entry.unit;
-            if (entry.expiryDate) item.expiryDate = entry.expiryDate;
+            addBatchQty(item, entry.expiryDate || "", entry.qty);
             found = true;
             break;
         }
     }
     if (!found) {
-        inventoryData.push({
+        const newItem = {
             id: generateId(),
             name: entry.drug,
             location: entry.location,
@@ -4977,8 +5528,11 @@ function commitReturnEntry(entry) {
             unit: entry.unit,
             reorder: 20,
             status: computeStockStatus(entry.qty, 20),
-            expiryDate: entry.expiryDate
-        });
+            expiryDate: entry.expiryDate || "",
+            expiryBatches: [{ expiry: entry.expiryDate || "", qty: entry.qty }]
+        };
+        syncItemExpiry(newItem, false);
+        inventoryData.push(newItem);
     }
 }
 
@@ -5056,12 +5610,21 @@ function updateIssueAvailability() {
     const locationField = document.getElementById("issueLocation");
     const unitField = document.getElementById("issueUnit");
     const qtyField = document.getElementById("issueQty");
+    const plusBtn = document.getElementById("issuePlusBtn");
+
+    // chosen expiry quantities belong to one drug — drop them if the drug changes
+    if (issueAllocations.length > 0 && (issueAllocDrug || "").toLowerCase() !== drugName.toLowerCase()) {
+        issueAllocations = [];
+        issueAllocDrug = "";
+    }
+    refreshIssueAllocUI();
     const enteredQty = parseInt(qtyField.value) || 0;
 
     if (!drugName) {
         hint.textContent = "";
         hint.className = "field-hint";
         qtyField.removeAttribute("max");
+        if (plusBtn) plusBtn.style.display = "none";
         return;
     }
 
@@ -5071,18 +5634,24 @@ function updateIssueAvailability() {
         locationField.value = item.location || "";
         if (item.unit && !unitField.value) unitField.value = item.unit;
         qtyField.max = item.balance;
+        const batches = getBatches(item);
+        let expiryText = "";
+        if (batches.length > 1) expiryText = ` — Expiries: ${describeBatches(item)}`;
+        else if (batches.length === 1 && batches[0].expiry) expiryText = ` — Expiry: ${batches[0].expiry}`;
+        if (plusBtn) plusBtn.style.display = batches.length > 1 ? "" : "none";   // one expiry = no plus
 
         if (enteredQty > item.balance) {
             hint.textContent = `⚠️ Only ${item.balance} ${item.unit || ""} available — this exceeds available stock!`;
             hint.className = "field-hint warning";
         } else {
-            hint.textContent = `📦 Available: ${item.balance} ${item.unit || ""} at ${item.location || "no location set"}`;
+            hint.textContent = `📦 Available: ${item.balance} ${item.unit || ""} at ${item.location || "no location set"}${expiryText}`;
             hint.className = "field-hint";
         }
     } else {
         hint.textContent = "⚠️ New/unknown drug — no stock on record yet";
         hint.className = "field-hint warning";
         qtyField.removeAttribute("max");
+        if (plusBtn) plusBtn.style.display = "none";
     }
 }
 
@@ -5109,6 +5678,16 @@ function addIssuingToPending() {
         }
     }
 
+    let allocations = null;
+    if (issueAllocations.length > 0) {
+        const total = issueAllocations.reduce((s, a) => s + a.qty, 0);
+        if (total !== qty) {
+            alert("The quantity doesn't match the chosen expiry quantities. Click the ＋ to fix it.");
+            return;
+        }
+        allocations = issueAllocations.map(a => ({ expiry: a.expiry, qty: a.qty }));
+    }
+
     pendingIssuing.push({
         pendingId: Date.now() + Math.random(),
         date: date,
@@ -5119,7 +5698,8 @@ function addIssuingToPending() {
         unit: unit,
         recipient: document.getElementById("issueRecipient").value,
         requisitioner: document.getElementById("issueRequisitioner").value.trim(),
-        issuedBy: document.getElementById("issueBy").value
+        issuedBy: document.getElementById("issueBy").value,
+        allocations: allocations
     });
 
     rememberLocationIfNew(location);
@@ -5128,6 +5708,9 @@ function addIssuingToPending() {
     rememberRequisitionerIfNew(document.getElementById("issueRequisitioner").value.trim());
     renderPendingIssuing();
 
+    issueAllocations = [];
+    issueAllocDrug = "";
+    refreshIssueAllocUI();
     document.getElementById("issueDrug").value = "";
     document.getElementById("issueLocation").value = "";
     document.getElementById("issueBatch").value = "";
@@ -5135,6 +5718,8 @@ function addIssuingToPending() {
     document.getElementById("issueUnit").value = "";
     document.getElementById("issueAvailableQty").textContent = "";
     document.getElementById("issueQty").removeAttribute("max");
+    const plusBtn = document.getElementById("issuePlusBtn");
+    if (plusBtn) plusBtn.style.display = "none";
     document.getElementById("issueDrug").focus();
 }
 
@@ -5145,6 +5730,7 @@ function renderPendingIssuing() {
     card.style.display = pendingIssuing.length > 0 ? "block" : "none";
     tbody.innerHTML = "";
     for (const r of pendingIssuing) {
+        const hasAlloc = !!(r.allocations && r.allocations.length);
         const row = tbody.insertRow();
         const dateCell = row.insertCell(0);
         const dateInput = document.createElement("input");
@@ -5180,6 +5766,10 @@ function renderPendingIssuing() {
         qtyInput.className = "pending-qty-input";
         const stockItem = inventoryData.find(i => i.name.toLowerCase() === (r.drug || "").toLowerCase());
         if (stockItem) qtyInput.title = `Available: ${stockItem.balance} ${stockItem.unit || ""}`;
+        if (hasAlloc) {
+            qtyInput.readOnly = true;
+            qtyInput.title = "Total of the chosen expiry quantities — use the ✏️ to change them";
+        }
         qtyInput.onchange = () => {
             const val = parseInt(qtyInput.value) || 0;
             if (val <= 0) { alert("Quantity must be greater than 0."); renderPendingIssuing(); return; }
@@ -5193,6 +5783,21 @@ function renderPendingIssuing() {
             r.qty = val;
         };
         qtyCell.appendChild(qtyInput);
+        if (stockItem && (getBatches(stockItem).length > 1 || hasAlloc)) {
+            const pickBtn = document.createElement("button");
+            pickBtn.type = "button";
+            pickBtn.className = "qty-plus-btn small";
+            pickBtn.textContent = hasAlloc ? "✏️" : "＋";
+            pickBtn.title = "Choose which expiry date(s) to issue from";
+            pickBtn.onclick = () => openIssueAllocModal(r);
+            qtyCell.appendChild(pickBtn);
+        }
+        if (hasAlloc) {
+            const note = document.createElement("div");
+            note.className = "exp-split-note";
+            note.textContent = r.allocations.map(a => `${a.qty} × ${fmtExpiry(a.expiry)}`).join(" · ");
+            qtyCell.appendChild(note);
+        }
 
         row.insertCell(5).textContent = r.unit || "";
         row.insertCell(6).textContent = r.recipient || "";
@@ -5233,16 +5838,31 @@ function clearPendingIssuing() {
 function commitIssuingEntry(entry) {
     let found = false;
     let result = { success: true, message: "" };
+    let usedAllocations = null;
 
     for (let item of inventoryData) {
         if (item.name.toLowerCase() === entry.drug.toLowerCase()) {
             found = true;
             if (item.balance >= entry.qty) {
-                item.issued += entry.qty;
-                item.balance = item.opening + item.received - item.issued;
-                item.status = computeStockStatus(item.balance, item.reorder);
-                if (entry.location) item.location = entry.location;
-                if (entry.unit) item.unit = entry.unit;
+                normalizeItemBatches(item);
+                const chosen = !!(entry.allocations && entry.allocations.length);
+                // no expiry chosen -> earliest expiry first
+                const alloc = chosen
+                    ? entry.allocations.map(a => ({ expiry: a.expiry || "", qty: a.qty }))
+                    : allocateFEFO(item, entry.qty);
+                const check = validateAllocations(item, alloc, entry.qty);
+                if (!check.ok) {
+                    result.success = false;
+                    result.message = `"${entry.drug}": ${check.message}` + (chosen ? " — click the ✏️ next to the quantity to pick the expiry dates again" : "");
+                } else {
+                    deductAllocations(item, alloc);
+                    item.issued += entry.qty;
+                    item.balance = item.opening + item.received - item.issued;
+                    item.status = computeStockStatus(item.balance, item.reorder);
+                    if (entry.location) item.location = entry.location;
+                    if (entry.unit) item.unit = entry.unit;
+                    usedAllocations = alloc;
+                }
             } else {
                 result.success = false;
                 result.message = `"${entry.drug}": insufficient stock (wanted ${entry.qty}, have ${item.balance})`;
@@ -5257,7 +5877,7 @@ function commitIssuingEntry(entry) {
     }
 
     if (result.success) {
-        issuingData.unshift({
+        const historyRow = {
             id: Date.now() + Math.random(),
             date: entry.date,
             drug: entry.drug,
@@ -5268,7 +5888,9 @@ function commitIssuingEntry(entry) {
             recipient: entry.recipient,
             requisitioner: entry.requisitioner || "",
             issuedBy: entry.issuedBy
-        });
+        };
+        if (usedAllocations && usedAllocations.length) historyRow.expirySplits = usedAllocations;
+        issuingData.unshift(historyRow);
     }
 
     return result;
@@ -5382,7 +6004,9 @@ function displayReceiving() {
         row.insertCell(6).textContent = r.supplier || "";
         row.insertCell(7).textContent = r.courier || "";
         row.insertCell(8).textContent = r.invoiceNo || "";
-        row.insertCell(9).textContent = r.expiryDate || "";
+        row.insertCell(9).textContent = (r.expirySplits && r.expirySplits.length > 1)
+            ? r.expirySplits.map(s => `${s.qty} × ${s.expiry}`).join(" · ")
+            : (r.expiryDate || "");
         row.insertCell(10).textContent = r.receivedBy || "";
         const actionCell = row.insertCell(11);
         if (currentUserRole === "admin") {
@@ -5413,7 +6037,16 @@ function displayIssuing() {
         row.insertCell(1).textContent = r.drug || "";
         row.insertCell(2).textContent = r.location || "";
         row.insertCell(3).textContent = r.batch || "";
-        row.insertCell(4).textContent = r.qty || 0;
+        const histQtyCell = row.insertCell(4);
+        histQtyCell.textContent = r.qty || 0;
+        if (r.expirySplits && r.expirySplits.length > 1) {
+            const splitNote = document.createElement("div");
+            splitNote.className = "exp-split-note";
+            splitNote.textContent = r.expirySplits.map(s => `${s.qty} × ${fmtExpiry(s.expiry)}`).join(" · ");
+            histQtyCell.appendChild(splitNote);
+        } else if (r.expirySplits && r.expirySplits.length === 1 && r.expirySplits[0].expiry) {
+            histQtyCell.title = `From expiry ${r.expirySplits[0].expiry}`;
+        }
         row.insertCell(5).textContent = r.unit || "";
         row.insertCell(6).textContent = r.recipient || "";
         row.insertCell(7).textContent = r.requisitioner || "";
@@ -5440,12 +6073,24 @@ function undoReceivingEntry(id) {
     if (idx === -1) return;
     const entry = receivingData[idx];
     const item = inventoryData.find(i => i.name.toLowerCase() === entry.drug.toLowerCase());
+    const strict = !!(entry.expirySplits && entry.expirySplits.length);
+    const splits = strict ? entry.expirySplits : [{ qty: entry.qty, expiry: entry.expiryDate || "" }];
 
     if (item) {
+        normalizeItemBatches(item);
         const projectedBalance = item.opening + (item.received - entry.qty) - item.issued;
         if (projectedBalance < 0) {
             alert(`Can't undo this receipt — some of this stock ("${entry.drug}") has already been issued out since it arrived, so removing it would push the balance negative.\n\nCurrent balance: ${item.balance} ${item.unit || ""}.`);
             return;
+        }
+        for (const s of splits) {
+            if (!s.expiry) continue;
+            const b = getBatches(item).find(x => x.expiry === s.expiry);
+            const have = b ? b.qty : 0;
+            if (have < s.qty && (strict || b)) {
+                alert(`Can't undo this receipt — only ${have} of the ${s.qty} received with expiry ${s.expiry} is still in stock (the rest has already been issued).`);
+                return;
+            }
         }
     }
 
@@ -5455,6 +6100,7 @@ function undoReceivingEntry(id) {
         item.received -= entry.qty;
         item.balance = item.opening + item.received - item.issued;
         item.status = computeStockStatus(item.balance, item.reorder);
+        for (const s of splits) removeBatchQty(item, s.expiry, s.qty);
     }
     receivingData.splice(idx, 1);
     saveAll();
@@ -5475,10 +6121,18 @@ function undoIssuingEntry(id) {
 
     const item = inventoryData.find(i => i.name.toLowerCase() === entry.drug.toLowerCase());
     if (item) {
+        normalizeItemBatches(item);
         item.issued -= entry.qty;
         if (item.issued < 0) item.issued = 0;
         item.balance = item.opening + item.received - item.issued;
         item.status = computeStockStatus(item.balance, item.reorder);
+        // put the stock back under the expiry dates it came from
+        if (entry.expirySplits && entry.expirySplits.length) {
+            for (const s of entry.expirySplits) addBatchQty(item, s.expiry || "", s.qty);
+        } else {
+            addBatchQty(item, item.expiryDate || "", entry.qty);
+        }
+        normalizeItemBatches(item);
     }
     issuingData.splice(idx, 1);
     saveAll();
@@ -5523,7 +6177,7 @@ function refreshInventory() {
         row.insertCell(4).textContent = item.opening;
         row.insertCell(5).textContent = item.received;
         row.insertCell(6).textContent = item.issued;
-        row.insertCell(7).innerHTML = `<strong>${item.balance}</strong>`;
+        row.insertCell(7).innerHTML = balanceCellHtml(item);
         row.insertCell(8).textContent = item.reorder;
         const statusCell = row.insertCell(9);
         const status = computeStockStatus(item.balance, item.reorder);
@@ -5534,7 +6188,15 @@ function refreshInventory() {
         } else {
             statusCell.innerHTML = '<span class="badge badge-ok">✓ OK</span>';
         }
-        row.insertCell(10).textContent = item.expiryDate || "Not set";
+        const invExpiryCell = row.insertCell(10);
+        invExpiryCell.textContent = item.expiryDate || "Not set";
+        const extraExpiries = getBatches(item).length - 1;
+        if (extraExpiries > 0) {
+            const more = document.createElement("span");
+            more.className = "exp-more";
+            more.textContent = `+${extraExpiries} more`;
+            invExpiryCell.appendChild(more);
+        }
         const expiryStatusCell = row.insertCell(11);
         expiryStatusCell.innerHTML = `<span class="badge ${expiryInfo.class}">${expiryInfo.status}</span>`;
         if(expiryInfo.status === "EXPIRED") row.classList.add("expired-row");
@@ -5551,35 +6213,63 @@ function refreshInventory() {
     searchInventory();
 }
 
+let expirySortConfig = { key: 'expiryDate', direction: 'asc' };
+
+function sortExpiryTable(key) {
+    if (expirySortConfig.key === key) {
+        expirySortConfig.direction = expirySortConfig.direction === 'asc' ? 'desc' : 'asc';
+    } else {
+        expirySortConfig.key = key;
+        expirySortConfig.direction = 'asc';
+    }
+    refreshExpiryTracker();
+}
+
 function refreshExpiryTracker() {
     var tbody = document.getElementById("expiryBody");
     if (!tbody) return;
     var filter = document.getElementById("expiryFilter")?.value || "all";
     tbody.innerHTML = "";
-    
+
+    const balInd = document.getElementById("expSortBalance");
+    const expInd = document.getElementById("expSortExpiry");
+    const arrow = expirySortConfig.direction === 'asc' ? '↑' : '↓';
+    if (balInd) balInd.textContent = expirySortConfig.key === 'balance' ? arrow : '↕';
+    if (expInd) expInd.textContent = expirySortConfig.key === 'expiryDate' ? arrow : '↕';
+
     if(inventoryData.length === 0) {
         tbody.innerHTML = `<tr><td colspan="8" class="empty-state"><span class="icon">📭</span>No drugs in inventory.</td></tr>`;
         return;
     }
-    
-    const sortedItems = [...inventoryData].sort((a, b) => {
-        if(!a.expiryDate) return 1;
+
+    const dir = expirySortConfig.direction === 'asc' ? 1 : -1;
+    const byExpiry = (a, b) => {
+        if(!a.expiryDate && !b.expiryDate) return 0;
+        if(!a.expiryDate) return 1;      // drugs with no date always sit at the bottom
         if(!b.expiryDate) return -1;
         return new Date(a.expiryDate) - new Date(b.expiryDate);
+    };
+    const sortedItems = [...inventoryData].sort((a, b) => {
+        if (expirySortConfig.key === 'balance') {
+            const diff = ((a.balance || 0) - (b.balance || 0)) * dir;
+            return diff !== 0 ? diff : byExpiry(a, b);
+        }
+        const c = byExpiry(a, b);
+        return (a.expiryDate && b.expiryDate) ? c * dir : c;
     });
-    
+
     for(let item of sortedItems) {
         const expiryInfo = getExpiryStatus(item.expiryDate);
         if(filter === "expired" && expiryInfo.status !== "EXPIRED") continue;
         if(filter === "expiring-soon" && expiryInfo.status !== "Expiring Soon") continue;
         if(filter === "good" && expiryInfo.status !== "Good") continue;
         if(filter === "no-date" && item.expiryDate) continue;
-        
+
         const row = tbody.insertRow();
         row.insertCell(0).textContent = item.id;
         row.insertCell(1).textContent = item.name;
         row.insertCell(2).textContent = item.location || "";
-        row.insertCell(3).innerHTML = `<strong>${item.balance}</strong>`;
+        row.insertCell(3).innerHTML = balanceCellHtml(item);
         row.insertCell(4).textContent = item.expiryDate || "Not set";
         let daysLeftText = "N/A";
         if (expiryInfo.daysLeft !== null) {
@@ -6095,6 +6785,8 @@ function saveEditItem(id) {
         return;
     }
     
+    normalizeItemBatches(item);               // make sure existing stock is split into expiry batches first
+    const oldExpiry = item.expiryDate || "";
     item.name = newName;
     item.location = newLocation;
     item.balance = newBalance;
@@ -6105,6 +6797,12 @@ function saveEditItem(id) {
     item.issued = newIssued;
     item.reorder = newReorder;
     item.status = computeStockStatus(newBalance, newReorder);
+    if ((newExpiry || "") !== oldExpiry) {
+        // the Expiry box here edits the CURRENT (earliest) expiry
+        const cur = item.expiryBatches.find(b => b.qty > 0 && (b.expiry || "") === oldExpiry) || item.expiryBatches.find(b => b.qty > 0);
+        if (cur) cur.expiry = newExpiry;
+    }
+    normalizeItemBatches(item);               // keep the expiry quantities in step with the edited balance
     
     rememberLocationIfNew(newLocation);
     rememberUnitIfNew(newUnit);
@@ -6214,6 +6912,7 @@ function addDrugManually() {
         expiryDate: expiry
     };
 
+    normalizeItemBatches(newDrug);
     inventoryData.push(newDrug);
     rememberLocationIfNew(location);
     rememberUnitIfNew(unit);
@@ -6228,6 +6927,8 @@ function addDrugManually() {
 }
 
 function clearReceivingForm() {
+    receiveSplits = [];
+    applyReceiveSplitsToForm();
     document.getElementById("receiptDrug").value = "";
     document.getElementById("receiptLocation").value = "";
     document.getElementById("receiptBatch").value = "";
@@ -6243,9 +6944,13 @@ function clearReceivingForm() {
     if (hint) { hint.textContent = ""; hint.className = "field-hint"; }
     const expiryHint = document.getElementById("receiveExpiryHint");
     if (expiryHint) { expiryHint.textContent = ""; expiryHint.className = "field-hint"; }
+    updateReceivePlus();
 }
 
 function clearIssuingForm() {
+    issueAllocations = [];
+    issueAllocDrug = "";
+    refreshIssueAllocUI();
     document.getElementById("issueDrug").value = "";
     document.getElementById("issueLocation").value = "";
     document.getElementById("issueBatch").value = "";
@@ -6257,6 +6962,8 @@ function clearIssuingForm() {
     document.getElementById("issueDate").value = new Date().toISOString().split('T')[0];
     document.getElementById("issueAvailableQty").textContent = "";
     document.getElementById("issueQty").removeAttribute("max");
+    const plusBtn = document.getElementById("issuePlusBtn");
+    if (plusBtn) plusBtn.style.display = "none";
 }
 
 function exportToExcel() {
@@ -7564,6 +8271,7 @@ console.log("💾 Ctrl+S saves to cloud");
     aiSwitchTab("Issuing");
     const dateEl = document.getElementById("issueDate");
     if (dateEl && !dateEl.value && typeof setDefaultDates === "function") setDefaultDates();
+    issueAllocations = []; issueAllocDrug = "";
     document.getElementById("issueDrug").value = drug;
     if (typeof updateIssueAvailability === "function") updateIssueAvailability();
     document.getElementById("issueLocation").value = location;
@@ -7597,6 +8305,7 @@ console.log("💾 Ctrl+S saves to cloud");
     aiSwitchTab("Receiving");
     const dateEl = document.getElementById("receiptDate");
     if (dateEl && !dateEl.value && typeof setDefaultDates === "function") setDefaultDates();
+    receiveSplits = []; applyReceiveSplitsToForm();
     document.getElementById("receiptDrug").value = drug;
     if (typeof updateReceiveAvailability === "function") updateReceiveAvailability();
     document.getElementById("receiptLocation").value = location;
