@@ -1064,8 +1064,6 @@
         .qty-plus-btn { padding: 0 12px; min-width: 40px; font-size: 20px; font-weight: 700; line-height: 1; border-radius: 8px; border: 2px solid #667eea; background: #fff; color: #667eea; cursor: pointer; box-shadow: none; margin: 0; }
         .qty-plus-btn:hover { background: #667eea; color: #fff; }
         .qty-plus-btn.small { min-width: 28px; padding: 2px 8px; font-size: 14px; margin-left: 4px; vertical-align: middle; }
-        .expiry-table tbody tr:nth-child(even) { background:#f7faff; }
-        .expiry-table td { vertical-align:middle; padding:12px 10px; }
         .exp-split-note { font-size: 11px; color: #4a5568; margin-top: 3px; line-height: 1.4; }
         .exp-split-summary { display: block; margin-top: 4px; font-size: 12px; color: #2d3748; line-height: 1.5; }
         .exp-split-summary a { color: #c53030; text-decoration: none; margin-left: 6px; }
@@ -1584,11 +1582,6 @@
                         <input type="text" id="reqUnit" list="unitList" placeholder="Vials, Cartons, Packs...">
                     </div>
                     <div class="form-group">
-                        <label>🧾 Requisition Receipt No.</label>
-                        <input type="text" id="reqReceipt" list="reqReceiptList" placeholder="Enter or choose receipt number">
-                        <datalist id="reqReceiptList"></datalist>
-                    </div>
-                    <div class="form-group">
                         <label>📝 Notes</label>
                         <input type="text" id="reqNotes" placeholder="Reason / department / anything useful">
                     </div>
@@ -1604,7 +1597,7 @@
                 <div class="table-wrapper">
                     <table id="pendingMyRequisitionsTable">
                         <thead>
-                            <tr><th>Date</th><th>Drug/Item</th><th>Location</th><th>Receipt No.</th><th>Qty</th><th>Available</th><th>Unit</th><th>Notes</th><th></th></tr>
+                            <tr><th>Date</th><th>Drug/Item</th><th>Location</th><th>Qty</th><th>Available</th><th>Unit</th><th>Notes</th><th></th></tr>
                         </thead>
                         <tbody id="pendingMyRequisitionsBody"></tbody>
                     </table>
@@ -1612,14 +1605,11 @@
                 <div style="margin-top: 15px;">
                     <button onclick="submitAllRequisitions()" class="btn-success">✅ SUBMIT ALL REQUESTS</button>
                     <button onclick="clearPendingRequisitions()" class="btn-clear-all" style="margin-left: 10px;">🗑️ Clear List</button>
-                    <button id="restorePendingReqBtn" onclick="restorePendingRequisitions()" class="btn-warning" style="display:none;margin-left:10px;">↩️ Restore cleared list (5 min)</button>
-
                 </div>
             </div>
 
             <div class="form-card" id="pendingApprovalsCard" style="display: block;">
                 <h3>🔎 Pending Approvals (<span id="pendingApprovalsCount">0</span>)</h3>
-                <div style="margin:8px 0 12px;"><button class="btn-warning" onclick="returnApprovedRequestsToPending()">↩️ Clear approved list / return to Pending</button></div>
                 <div class="table-wrapper">
                     <table id="pendingApprovalsTable">
                         <thead>
@@ -1631,11 +1621,10 @@
             </div>
 
             <h3>📜 <span id="requisitionsHistoryLabel">All Requests</span></h3>
-            <div style="margin:8px 0 12px;"><button onclick="printDailyIssuedRequests()" class="btn-outline print-btn">🖨️ Print Today's Issued Requests</button></div>
             <div class="table-wrapper">
                 <table id="requisitionsTable">
                     <thead>
-                        <tr><th>Date</th><th>Drug/Item</th><th>Location</th><th>Qty Requested</th><th>Qty Approved</th><th>Unit</th><th>Requested By</th><th>Receipt No.</th><th>Status</th><th>Handled By</th><th>Notes</th></tr>
+                        <tr><th>Date</th><th>Drug/Item</th><th>Location</th><th>Qty Requested</th><th>Qty Approved</th><th>Unit</th><th>Requested By</th><th>Status</th><th>Handled By</th><th>Notes</th></tr>
                     </thead>
                     <tbody id="requisitionsBody"></tbody>
                 </table>
@@ -31997,21 +31986,6 @@ function showToast(message, type) {
 
 let pendingRequisitions = [];
 
-function loadReqReceiptChoices() {
-    const list = document.getElementById("reqReceiptList");
-    if (!list) return;
-    const values = JSON.parse(localStorage.getItem("gaki_req_receipts") || "[]");
-    list.innerHTML = values.map(v => `<option value="${escapeHtml(v)}"></option>`).join("");
-}
-function rememberReqReceipt(value) {
-    if (!value) return;
-    const values = JSON.parse(localStorage.getItem("gaki_req_receipts") || "[]");
-    if (!values.some(v => v.toLowerCase() === value.toLowerCase())) {
-        values.push(value); localStorage.setItem("gaki_req_receipts", JSON.stringify(values));
-    }
-    loadReqReceiptChoices();
-}
-
 function updateReqAvailability() {
     const drugName = document.getElementById("reqDrug").value.trim();
     const hint = document.getElementById("reqAvailableQty");
@@ -32045,7 +32019,6 @@ function addRequisitionToPending() {
     const qty = parseInt(document.getElementById("reqQty").value) || 0;
     const unit = document.getElementById("reqUnit").value.trim();
     const notes = document.getElementById("reqNotes").value.trim();
-    const receiptNo = document.getElementById("reqReceipt")?.value.trim() || "";
 
     if (!date || !drug || qty <= 0) {
         alert("Please fill Date, Drug/Item, and a valid Quantity!");
@@ -32063,8 +32036,7 @@ function addRequisitionToPending() {
         location: resolvedLocation,
         qtyRequested: qty,
         unit: resolvedUnit,
-        notes: notes,
-        receiptNo: receiptNo
+        notes: notes
     });
 
     if (resolvedLocation) rememberLocationIfNew(resolvedLocation);
@@ -32081,19 +32053,15 @@ function renderPendingRequisitions() {
     if (!card || !tbody) return;
 
     count.textContent = pendingRequisitions.length;
-    const recovery = (() => { try { const x = JSON.parse(localStorage.getItem("gaki_pending_req_undo") || "null"); return currentUserRole === "admin" && x && Date.now()-x.at <= 5*60*1000; } catch(e) { return false; } })();
-    card.style.display = (pendingRequisitions.length > 0 || recovery) ? "block" : "none";
-    const restoreBtn = document.getElementById("restorePendingReqBtn");
-    if (restoreBtn) restoreBtn.style.display = recovery ? "inline-block" : "none";
+    card.style.display = pendingRequisitions.length > 0 ? "block" : "none";
     tbody.innerHTML = "";
     for (const r of pendingRequisitions) {
         const row = tbody.insertRow();
         row.insertCell(0).textContent = r.date || "";
         row.insertCell(1).textContent = r.drug || "";
         row.insertCell(2).textContent = r.location || "";
-        row.insertCell(3).textContent = r.receiptNo || "—";
 
-        const qtyCell = row.insertCell(4);
+        const qtyCell = row.insertCell(3);
         const qtyInput = document.createElement("input");
         qtyInput.type = "number";
         qtyInput.min = "1";
@@ -32107,13 +32075,13 @@ function renderPendingRequisitions() {
         qtyCell.appendChild(qtyInput);
 
         const stockItem = inventoryData.find(i => i.name.toLowerCase() === (r.drug || "").toLowerCase());
-        row.insertCell(5).textContent = currentUserRole === "admin"
+        row.insertCell(4).textContent = currentUserRole === "admin"
             ? (stockItem ? `${stockItem.balance} ${stockItem.unit || ""}` : "—")
             : "🔒 Admin only";
-        row.insertCell(6).textContent = r.unit || "";
-        row.insertCell(7).textContent = r.notes || "";
+        row.insertCell(5).textContent = r.unit || "";
+        row.insertCell(6).textContent = r.notes || "";
 
-        const actionCell = row.insertCell(8);
+        const actionCell = row.insertCell(7);
         const removeBtn = document.createElement("button");
         removeBtn.className = "btn-delete";
         removeBtn.textContent = "🗑️";
@@ -32129,39 +32097,11 @@ function removePendingRequisition(pendingId) {
 
 function clearPendingRequisitions() {
     if (pendingRequisitions.length === 0) { alert("Your request list is already empty."); return; }
-    if (confirm(`Clear all ${pendingRequisitions.length} items from your request list? You can restore them for 5 minutes.`)) {
-        localStorage.setItem("gaki_pending_req_undo", JSON.stringify({at:Date.now(), user:currentUserEmail, rows:pendingRequisitions}));
+    if (confirm(`Clear all ${pendingRequisitions.length} items from your request list? Nothing will be submitted.`)) {
         pendingRequisitions = [];
         renderPendingRequisitions();
-        const btn = document.getElementById("restorePendingReqBtn");
-        if (btn) btn.style.display = "inline-block";
-        alert("✅ Request list cleared. Admin can restore it within 5 minutes.");
+        alert("✅ Request list cleared.");
     }
-}
-
-function restorePendingRequisitions() {
-    if (currentUserRole !== "admin") { alert("Only an admin can restore a cleared request list."); return; }
-    try {
-        const saved = JSON.parse(localStorage.getItem("gaki_pending_req_undo") || "null");
-        if (!saved || Date.now() - saved.at > 5*60*1000) {
-            localStorage.removeItem("gaki_pending_req_undo");
-            document.getElementById("restorePendingReqBtn").style.display = "none";
-            alert("The 5-minute recovery period has expired.");
-            return;
-        }
-        if (!confirm("Restore the cleared pending requisition list?")) return;
-        pendingRequisitions = saved.rows || [];
-        renderPendingRequisitions();
-        localStorage.removeItem("gaki_pending_req_undo");
-        document.getElementById("restorePendingReqBtn").style.display = "none";
-    } catch(e) { alert("Could not restore the request list: " + e.message); }
-}
-
-function printDailyIssuedRequests() {
-    const today = new Date().toISOString().slice(0,10);
-    const rows = issuingData.filter(r => (r.date || "") === today);
-    const body = rows.length ? rows.map(r => `<tr><td>${escapeHtml(r.date||"")}</td><td>${escapeHtml(r.drug||"")}</td><td>${escapeHtml(r.location||"")}</td><td>${escapeHtml(r.qty||0)}</td><td>${escapeHtml(r.unit||"")}</td><td>${escapeHtml(r.recipient||r.requisitioner||"")}</td><td>${escapeHtml(r.issuedBy||"")}</td><td>${escapeHtml(r.receiptNo||r.issueNo||"")}</td></tr>`).join("") : `<tr><td colspan="8">No issued requests recorded today.</td></tr>`;
-    printHtmlDoc("Daily Issued Requests", [`Date: ${today}`, `Records: ${rows.length}`], `<table><thead><tr><th>Date</th><th>Drug</th><th>Location</th><th>Qty</th><th>Unit</th><th>Recipient</th><th>Issued By</th><th>Receipt</th></tr></thead><tbody>${body}</tbody></table>`);
 }
 
 function clearRequisitionForm(keepDate) {
@@ -32170,7 +32110,6 @@ function clearRequisitionForm(keepDate) {
     document.getElementById("reqQty").value = "";
     document.getElementById("reqUnit").value = "";
     document.getElementById("reqNotes").value = "";
-    const receiptEl = document.getElementById("reqReceipt"); if (receiptEl) receiptEl.value = "";
     document.getElementById("reqAvailableQty").textContent = "";
     if (!keepDate) document.getElementById("reqDate").value = new Date().toISOString().split('T')[0];
     document.getElementById("reqDrug").focus();
@@ -32186,7 +32125,6 @@ async function submitAllRequisitions() {
     try {
         const batch = db.batch();
         for (const r of pendingRequisitions) {
-            rememberReqReceipt(r.receiptNo);
             const docRef = requisitionsColRef.doc();
             batch.set(docRef, {
                 date: r.date,
@@ -32196,7 +32134,6 @@ async function submitAllRequisitions() {
                 qtyApproved: null,
                 unit: r.unit,
                 notes: r.notes,
-                receiptNo: r.receiptNo || "",
                 requestedBy: currentUserEmail,
                 requestedAt: new Date().toISOString(),
                 status: "pending",
@@ -32314,17 +32251,16 @@ function renderRequisitions() {
         row.insertCell(4).textContent = r.qtyApproved != null ? r.qtyApproved : "—";
         row.insertCell(5).textContent = r.unit || "";
         row.insertCell(6).textContent = r.requestedBy || "";
-        row.insertCell(7).textContent = r.receiptNo || "—";
 
-        const statusCell = row.insertCell(8);
+        const statusCell = row.insertCell(7);
         const badge = document.createElement("span");
         badge.textContent = r.status === "pending" ? "⏳ Pending" : r.status === "approved" ? "✅ Approved" : "❌ Rejected";
         badge.style.fontWeight = "600";
         badge.style.color = r.status === "pending" ? "#b7791f" : r.status === "approved" ? "#276749" : "#c53030";
         statusCell.appendChild(badge);
 
-        row.insertCell(9).textContent = r.reviewedBy || "";
-        row.insertCell(10).textContent = r.notes || "";
+        row.insertCell(8).textContent = r.reviewedBy || "";
+        row.insertCell(9).textContent = r.notes || "";
     }
 }
 
@@ -32333,28 +32269,6 @@ function updateRequestsBadge(pendingCount) {
     if (!badge) return;
     badge.textContent = pendingCount;
     badge.style.display = pendingCount > 0 ? "inline-block" : "none";
-}
-
-async function returnApprovedRequestsToPending() {
-    if (currentUserRole !== "admin") { alert("Only an admin can do this."); return; }
-    const approved = requisitions.filter(r => r.status === "approved");
-    if (!approved.length) { alert("There are no approved requests to return."); return; }
-    if (!confirm(`Return ${approved.length} approved request(s) to Pending so they can be reviewed again?`)) return;
-    try {
-        const batch = db.batch();
-        approved.forEach(r => batch.update(requisitionsColRef.doc(r.id), {
-            status:"pending", qtyApproved:null, reviewedBy:"", reviewedAt:""
-        }));
-        await batch.commit();
-        // Remove any matching unprocessed issue-queue entries so re-approval will not duplicate them.
-        pendingIssuing = pendingIssuing.filter(p => !approved.some(r =>
-            (p.drug||"").toLowerCase()===(r.drug||"").toLowerCase() &&
-            (p.requisitioner||p.recipient||"")===r.requestedBy &&
-            (p.date||"")>=(r.date||"")
-        ));
-        saveAll(); renderPendingIssuing(); renderRequisitions();
-        alert("Approved requests are back in Pending for review.");
-    } catch(e) { alert("Could not return approved requests: " + e.message); }
 }
 
 async function approveRequisition(id) {
@@ -33436,7 +33350,6 @@ function generateId() {
 }
 
 function initSystem() {
-    loadReqReceiptChoices();
     if (systemInitialized) return;
     
     loadAllData();
@@ -34940,51 +34853,74 @@ function sortExpiryTable(key) {
 }
 
 function refreshExpiryTracker() {
-    const tbody = document.getElementById("expiryBody");
+    var tbody = document.getElementById("expiryBody");
     if (!tbody) return;
-    const filter = document.getElementById("expiryFilter")?.value || "all";
+    var filter = document.getElementById("expiryFilter")?.value || "all";
     tbody.innerHTML = "";
+
     const balInd = document.getElementById("expSortBalance");
     const expInd = document.getElementById("expSortExpiry");
-    const arrow = expirySortConfig.direction === "asc" ? "↑" : "↓";
-    if (balInd) balInd.textContent = expirySortConfig.key === "balance" ? arrow : "↕";
-    if (expInd) expInd.textContent = expirySortConfig.key === "expiryDate" ? arrow : "↕";
+    const arrow = expirySortConfig.direction === 'asc' ? '↑' : '↓';
+    if (balInd) balInd.textContent = expirySortConfig.key === 'balance' ? arrow : '↕';
+    if (expInd) expInd.textContent = expirySortConfig.key === 'expiryDate' ? arrow : '↕';
 
-    // One row per expiry + storage location makes identical expiry dates easy to scan.
-    const rows = [];
-    for (const item of inventoryData) {
-        normalizeItemBatches(item);
-        for (const batch of getBatches(item)) {
-            if (!(Number(batch.qty) > 0)) continue;
-            const info = getExpiryStatus(batch.expiry);
-            if (filter === "expired" && info.status !== "EXPIRED") continue;
-            if (filter === "expiring-soon" && info.status !== "Expiring Soon") continue;
-            if (filter === "good" && info.status !== "Good") continue;
-            if (filter === "no-date" && batch.expiry) continue;
-            rows.push({item, expiry: batch.expiry || "", location: batch.loc || item.location || "Unassigned", qty:Number(batch.qty), info});
-        }
-    }
-    rows.sort((a,b) => expirySortConfig.key === "balance"
-        ? (a.qty-b.qty)* (expirySortConfig.direction === "asc" ? 1 : -1)
-        : compareExpiry(a.expiry,b.expiry) * (expirySortConfig.direction === "asc" ? 1 : -1)
-          || a.item.name.localeCompare(b.item.name) || a.location.localeCompare(b.location));
-    if (!rows.length) {
-        tbody.innerHTML = `<tr><td colspan="8" class="empty-state">📭 No expiry batches match this filter.</td></tr>`;
+    if(inventoryData.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" class="empty-state"><span class="icon">📭</span>No drugs in inventory.</td></tr>`;
         return;
     }
-    for (const entry of rows) {
-        const {item, expiry, location, qty, info} = entry;
+
+    const dir = expirySortConfig.direction === 'asc' ? 1 : -1;
+    const byExpiry = (a, b) => {
+        if(!a.expiryDate && !b.expiryDate) return 0;
+        if(!a.expiryDate) return 1;      // drugs with no date always sit at the bottom
+        if(!b.expiryDate) return -1;
+        return new Date(a.expiryDate) - new Date(b.expiryDate);
+    };
+    const sortedItems = [...inventoryData].sort((a, b) => {
+        if (expirySortConfig.key === 'balance') {
+            const diff = ((a.balance || 0) - (b.balance || 0)) * dir;
+            return diff !== 0 ? diff : byExpiry(a, b);
+        }
+        const c = byExpiry(a, b);
+        return (a.expiryDate && b.expiryDate) ? c * dir : c;
+    });
+
+    let shownCount = 0;
+    for(let item of sortedItems) {
+        // Items with no quantity on hand (zero or negative) are not tracked for expiry
+        if (!(Number(item.balance) > 0)) continue;
+        const expiryInfo = getExpiryStatus(item.expiryDate);
+        if(filter === "expired" && expiryInfo.status !== "EXPIRED") continue;
+        if(filter === "expiring-soon" && expiryInfo.status !== "Expiring Soon") continue;
+        if(filter === "good" && expiryInfo.status !== "Good") continue;
+        if(filter === "no-date" && item.expiryDate) continue;
+
+        shownCount++;
         const row = tbody.insertRow();
         row.insertCell(0).textContent = item.id;
         row.insertCell(1).textContent = item.name;
-        row.insertCell(2).textContent = location;
-        row.insertCell(3).innerHTML = `<strong class="avail-qty">${qty.toLocaleString()}</strong> ${escapeHtml(item.unit || "")}`;
-        row.insertCell(4).textContent = expiry || "Not set";
-        row.insertCell(5).textContent = info.daysLeft === null ? "N/A" : info.daysLeft < 0 ? `Expired ${Math.abs(info.daysLeft)} day(s) ago` : `${info.daysLeft} days`;
-        row.insertCell(6).innerHTML = `<span class="badge ${info.class}">${info.status}</span>`;
-        row.insertCell(7).textContent = info.status === "EXPIRED" ? "⚠️ DISCARD IMMEDIATELY" : info.status === "Expiring Soon" ? "🔔 Use first / Move to front" : !expiry ? "📝 Add expiry date" : "✓ OK";
-        if (info.status === "EXPIRED") row.classList.add("expired-row");
-        else if (info.status === "Expiring Soon") row.classList.add("expiring-soon-row");
+        row.insertCell(2).textContent = locSummary(item);
+        row.insertCell(3).innerHTML = balanceCellHtml(item);
+        row.insertCell(4).textContent = item.expiryDate || "Not set";
+        let daysLeftText = "N/A";
+        if (expiryInfo.daysLeft !== null) {
+            daysLeftText = expiryInfo.daysLeft < 0
+                ? `Expired ${Math.abs(expiryInfo.daysLeft)} day(s) ago`
+                : `${expiryInfo.daysLeft} days`;
+        }
+        row.insertCell(5).textContent = daysLeftText;
+        row.insertCell(6).innerHTML = `<span class="badge ${expiryInfo.class}">${expiryInfo.status}</span>`;
+        let action = "";
+        if(expiryInfo.status === "EXPIRED") action = "⚠️ DISCARD IMMEDIATELY";
+        else if(expiryInfo.status === "Expiring Soon") action = "🔔 Use first / Move to front";
+        else if(!item.expiryDate) action = "📝 Add expiry date";
+        else action = "✓ OK";
+        row.insertCell(7).innerHTML = action;
+        if(expiryInfo.status === "EXPIRED") row.classList.add("expired-row");
+        else if(expiryInfo.status === "Expiring Soon") row.classList.add("expiring-soon-row");
+    }
+    if (shownCount === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" class="empty-state"><span class="icon">📭</span>No drugs with stock on hand match this filter.</td></tr>`;
     }
 }
 
