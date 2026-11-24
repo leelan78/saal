@@ -1081,72 +1081,50 @@
         .exp-row-info { grid-template-columns: 1.3fr 0.8fr 1fr 1fr; padding: 6px 0; border-bottom: 1px solid #edf2f7; font-size: 14px; }
         .exp-row-loc { grid-template-columns: 0.8fr 1.2fr 1fr 34px; }
         .loc-pill { display: inline-block; margin-left: 4px; padding: 0 7px; border-radius: 10px; background: #f0fff4; color: #276749; border: 1px solid #c6f6d5; font-size: 12px; font-weight: 600; white-space: nowrap; }
-        /* Nicely grouped same-expiry / multi-location breakdown */
-        .exp-group-card {
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            padding: 12px 14px;
-            margin-bottom: 12px;
-            background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
-            box-shadow: 0 1px 3px rgba(26, 60, 92, 0.06);
-        }
-        .exp-group-card:last-child { margin-bottom: 0; }
-        .exp-group-head {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            justify-content: space-between;
-            gap: 8px 12px;
-            margin-bottom: 10px;
-            padding-bottom: 8px;
-            border-bottom: 1px dashed #e2e8f0;
-        }
-        .exp-group-head .exp-date {
-            font-size: 15px;
-            font-weight: 700;
-            color: #1a3c5c;
-        }
-        .exp-group-meta {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            align-items: center;
-            font-size: 12px;
-            color: #4a5568;
-        }
-        .exp-group-total {
-            font-weight: 800;
-            color: #15803d;
-            font-size: 14px;
-        }
-        .exp-loc-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 8px;
-        }
-        .exp-loc-chip {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 8px;
-            padding: 8px 10px;
-            border-radius: 10px;
-            background: #edf2f7;
-            border: 1px solid #e2e8f0;
+        /* Simple expiry / location breakdown table */
+        .exp-simple-table {
+            width: 100%;
+            border-collapse: collapse;
             font-size: 13px;
+            color: #2d3748;
         }
-        .exp-loc-chip .loc-name {
-            font-weight: 700;
-            color: #1e40af;
+        .exp-simple-table th {
+            text-align: left;
+            font-weight: 600;
+            color: #4a5568;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            padding: 8px 10px;
+            border-bottom: 1px solid #e2e8f0;
+            background: #fafafa;
         }
-        .exp-loc-chip .loc-qty {
-            font-weight: 800;
-            color: #15803d;
+        .exp-simple-table td {
+            padding: 9px 10px;
+            border-bottom: 1px solid #edf2f7;
+            vertical-align: top;
+        }
+        .exp-simple-table tr:last-child td { border-bottom: none; }
+        .exp-simple-table .exp-num {
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+            font-weight: 600;
             white-space: nowrap;
         }
-        .exp-loc-chip.single {
-            background: #f0fff4;
-            border-color: #c6f6d5;
+        .exp-simple-table .exp-muted { color: #718096; font-weight: 400; }
+        .exp-simple-table .exp-subrow td {
+            padding-top: 4px;
+            padding-bottom: 4px;
+            color: #4a5568;
+            font-size: 12.5px;
+            background: #fafafa;
+        }
+        .exp-simple-table .exp-subrow td:first-child { padding-left: 22px; }
+        .exp-simple-empty {
+            padding: 20px 10px;
+            text-align: center;
+            color: #a0aec0;
+            font-size: 13px;
         }
         .pending-recover-banner {
             display: none;
@@ -1660,14 +1638,14 @@
                 </div>
             </div>
 
-            <div class="form-card" id="pendingIssuingCard" style="display: block;">
+            <div class="form-card" id="pendingIssuingCard" style="display: none;">
                 <h3>📝 Pending Issuing (<span id="pendingIssuingCount">1</span>) — not yet saved to inventory</h3>
                 <div class="table-wrapper">
                     <table id="pendingIssuingTable">
                         <thead>
                             <tr><th>Date</th><th>Drug/Item</th><th>Location</th><th>Batch No.</th><th>Qty</th><th>Unit</th><th>Recipient</th><th>Sales Rep / Requisitioner</th><th>Issued By</th><th></th></tr>
                         </thead>
-                        <tbody id="pendingIssuingBody"><tr><td><input type="date" class="pending-date-input"></td><td>Clidacin (Clindamycin) injection 300 mg</td><td><input type="text" list="locationList" class="pending-text-input" data-auto="B0" title="Where this is taken from (earliest expiry first). Type a location to take it from there only."></td><td></td><td><input type="number" min="1" class="pending-qty-input" title="Available: 1350 Packs"></td><td>Vials</td><td>Living Waters</td><td><input type="text" list="requisitionerList" class="pending-text-input"></td><td>Godfred</td><td><button class="btn-delete">🗑️</button></td></tr></tbody>
+                        <tbody id="pendingIssuingBody"></tbody>
                     </table>
                 </div>
                 <div style="margin-top: 15px;">
@@ -31346,10 +31324,29 @@ async function login() {
     }
 }
 
+function displayNameFromEmail(email) {
+    if (!email) return "User";
+    const s = String(email).trim();
+    const at = s.indexOf("@");
+    if (at > 0) return s.slice(0, at);
+    return s;
+}
+
+function setLoggedUserDisplay(emailOrName) {
+    const el = document.getElementById("loggedUser");
+    if (!el) return;
+    // If it looks like an email, show the part before @; otherwise show as-is
+    const label = (emailOrName && String(emailOrName).includes("@"))
+        ? displayNameFromEmail(emailOrName)
+        : (emailOrName || "User");
+    el.textContent = "👤 " + label;
+    el.title = emailOrName || "";
+}
+
 function enterApp(username) {
     document.getElementById("loginForm").style.display = "none";
     document.getElementById("mainApp").style.display = "block";
-    document.getElementById("loggedUser").textContent = "👤 " + username;
+    setLoggedUserDisplay(username);
     setTimeout(function() {
         initSystem();
     }, 100);
@@ -32406,7 +32403,7 @@ function renderRequisitions() {
             if (qtyInputEl) qtyInputEl.title = stockItem ? `Available: ${stockItem.balance} ${stockItem.unit || ""}` : "";
             row.cells[6].textContent = r.unit || "";
             row.cells[7].textContent = r.recipient || "";
-            row.cells[8].textContent = r.requestedBy || "";
+            row.cells[8].textContent = displayNameFromEmail(r.requestedBy || "");
             row.cells[9].textContent = r.notes || "";
 
             approvalsBody.appendChild(row);
@@ -32427,7 +32424,7 @@ function renderRequisitions() {
         row.insertCell(4).textContent = r.qtyApproved != null ? r.qtyApproved : "—";
         row.insertCell(5).textContent = r.unit || "";
         row.insertCell(6).textContent = r.recipient || "";
-        row.insertCell(7).textContent = r.requestedBy || "";
+        row.insertCell(7).textContent = displayNameFromEmail(r.requestedBy || "");
 
         const statusCell = row.insertCell(8);
         const badge = document.createElement("span");
@@ -32436,7 +32433,7 @@ function renderRequisitions() {
         badge.style.color = r.status === "pending" ? "#b7791f" : r.status === "approved" ? "#276749" : "#c53030";
         statusCell.appendChild(badge);
 
-        row.insertCell(9).textContent = r.reviewedBy || "";
+        row.insertCell(9).textContent = displayNameFromEmail(r.reviewedBy || "");
         row.insertCell(10).textContent = r.notes || "";
     }
 }
@@ -32802,10 +32799,10 @@ function renderExpModal() {
         cancelBtn.textContent = "Cancel";
         m.rows.forEach((r, i) => {
             const sameAsAbove = i > 0 && (m.rows[i - 1].expiry || "") === (r.expiry || "");
-            html += `<div class="exp-row exp-row-issue" style="${sameAsAbove ? "background:#f7fafc;border-radius:8px;padding:8px 6px;margin:2px 0;" : "padding:8px 6px;"}">
+            html += `<div class="exp-row exp-row-issue" style="padding:8px 6px;border-bottom:1px solid #edf2f7;">
                 <div>${sameAsAbove
-                    ? `<div style="font-size:12px;color:#718096;margin-bottom:2px;">Same expiry · different location</div><span class="loc-pill">📍 ${escapeHtml(r.loc || "Unspecified")}</span>`
-                    : `<strong>${escapeHtml(fmtExpiry(r.expiry))}</strong>${r.loc ? ` <span class="loc-pill">📍 ${escapeHtml(r.loc)}</span>` : ""}<div class="exp-sub">${expBadge(r.expiry)}</div>`}
+                    ? `<span class="exp-muted" style="font-size:12px;">Same date · ${escapeHtml(r.loc || "—")}</span>`
+                    : `<strong>${escapeHtml(fmtExpiry(r.expiry))}</strong>${r.loc ? ` · ${escapeHtml(r.loc)}` : ""}<div class="exp-sub exp-muted" style="font-size:12px;">${escapeHtml((getExpiryStatus(r.expiry).status || "").replace(/🟢|🟡|🟠|🔴|⚫/g, "").trim() || "")}</div>`}
                 </div>
                 <div class="exp-avail"><span class="avail-qty">${r.available}</span>${unit} available</div>
                 <input type="number" min="0" max="${r.available}" placeholder="0" value="${r.qty === "" || r.qty === undefined ? "" : r.qty}" oninput="expModalSet(${i}, 'qty', this.value)">
@@ -32818,17 +32815,18 @@ function renderExpModal() {
         addWrap.style.display = "none";
         applyBtn.style.display = "none";
         cancelBtn.textContent = "Close";
-        html += `<div class="exp-row exp-row-recv exp-row-head"><span>Expiry date</span><span>Qty received</span></div>`;
+        html += `<table class="exp-simple-table"><thead><tr><th>Expiry</th><th>Location</th><th class="exp-num">Qty</th></tr></thead><tbody>`;
         m.rows.forEach(r => {
-            html += `<div class="exp-row exp-row-recv"><span><strong>${escapeHtml(fmtExpiry(r.expiry))}</strong> ${expBadge(r.expiry)}${r.loc ? ` <span class="loc-pill">📍 ${escapeHtml(r.loc)}</span>` : ""}</span><span><strong>${r.qty}</strong>${unit}</span></div>`;
+            html += `<tr><td>${escapeHtml(fmtExpiry(r.expiry))}</td><td>${escapeHtml(r.loc || "—")}</td><td class="exp-num">${r.qty}${unit}</td></tr>`;
         });
+        html += `</tbody></table>`;
     } else {
-        document.getElementById("expModalTitle").textContent = "📅 Quantity left by expiry";
+        document.getElementById("expModalTitle").textContent = "Stock by expiry & location";
         document.getElementById("expModalSub").textContent = m.drug + (m.extra ? "  ·  " + m.extra : "");
         addWrap.style.display = "none";
         applyBtn.style.display = "none";
         cancelBtn.textContent = "Close";
-        // Group by expiry; same expiry across locations shows as one card with location chips
+        // Simple table: expiry, location, qty, days left
         const groups = [];
         const gAt = new Map();
         m.rows.forEach(r => {
@@ -32837,33 +32835,46 @@ function renderExpModal() {
             groups[gAt.get(k)].parts.push(r);
         });
         if (groups.length === 0) {
-            html += `<div class="empty-state" style="padding:20px;">No batch / location breakdown available.</div>`;
+            html += `<div class="exp-simple-empty">No batch / location breakdown available.</div>`;
+        } else {
+            const unitLabel = m.unit ? " (" + escapeHtml(m.unit) + ")" : "";
+            html += `<table class="exp-simple-table"><thead><tr>
+                <th>Expiry</th><th>Location</th><th class="exp-num">Qty${unitLabel}</th><th class="exp-num">Days left</th>
+            </tr></thead><tbody>`;
+            groups.forEach(g => {
+                const info = getExpiryStatus(g.expiry);
+                let days = "—";
+                if (info.daysLeft !== null) days = info.daysLeft < 0 ? "Expired" : String(info.daysLeft);
+                const total = g.parts.reduce((sum, p) => sum + (parseInt(p.qty) || 0), 0);
+                const multi = g.parts.length > 1;
+                if (!multi) {
+                    const loc = (g.parts[0].loc || "").trim() || "—";
+                    html += `<tr>
+                        <td>${escapeHtml(fmtExpiry(g.expiry))}</td>
+                        <td>${escapeHtml(loc)}</td>
+                        <td class="exp-num">${total}</td>
+                        <td class="exp-num exp-muted">${days}</td>
+                    </tr>`;
+                } else {
+                    html += `<tr>
+                        <td>${escapeHtml(fmtExpiry(g.expiry))}</td>
+                        <td class="exp-muted">${g.parts.length} locations</td>
+                        <td class="exp-num">${total}</td>
+                        <td class="exp-num exp-muted">${days}</td>
+                    </tr>`;
+                    g.parts.forEach(p => {
+                        const loc = (p.loc || "").trim() || "—";
+                        html += `<tr class="exp-subrow">
+                            <td></td>
+                            <td>${escapeHtml(loc)}</td>
+                            <td class="exp-num">${p.qty}</td>
+                            <td></td>
+                        </tr>`;
+                    });
+                }
+            });
+            html += `</tbody></table>`;
         }
-        groups.forEach(g => {
-            const info = getExpiryStatus(g.expiry);
-            let days = "No date";
-            if (info.daysLeft !== null) days = info.daysLeft < 0 ? `Expired ${Math.abs(info.daysLeft)}d ago` : `${info.daysLeft} days left`;
-            const total = g.parts.reduce((sum, p) => sum + (parseInt(p.qty) || 0), 0);
-            const multi = g.parts.length > 1;
-            const chips = g.parts.map(p => {
-                const loc = (p.loc || "").trim() || "Unspecified";
-                return `<div class="exp-loc-chip${multi ? "" : " single"}">
-                    <span class="loc-name">📍 ${escapeHtml(loc)}</span>
-                    <span class="loc-qty">${p.qty}${m.unit ? " " + escapeHtml(m.unit) : ""}</span>
-                </div>`;
-            }).join("");
-            html += `<div class="exp-group-card">
-                <div class="exp-group-head">
-                    <div class="exp-date">${escapeHtml(fmtExpiry(g.expiry))}</div>
-                    <div class="exp-group-meta">
-                        ${expBadge(g.expiry)}
-                        <span>${days}</span>
-                        <span class="exp-group-total">Total ${total}${m.unit ? " " + escapeHtml(m.unit) : ""}</span>
-                    </div>
-                </div>
-                <div class="exp-loc-grid">${chips}</div>
-            </div>`;
-        });
     }
     document.getElementById("expModalRows").innerHTML = html;
     document.getElementById("expModalTotal").textContent = expModalTotal();
@@ -34554,9 +34565,12 @@ function addIssuingToPending() {
 function renderPendingIssuing() {
     const card = document.getElementById("pendingIssuingCard");
     const tbody = document.getElementById("pendingIssuingBody");
-    document.getElementById("pendingIssuingCount").textContent = pendingIssuing.length;
-    card.style.display = pendingIssuing.length > 0 ? "block" : "none";
+    if (!Array.isArray(pendingIssuing)) pendingIssuing = [];
+    const countEl = document.getElementById("pendingIssuingCount");
+    if (countEl) countEl.textContent = pendingIssuing.length;
+    if (card) card.style.display = pendingIssuing.length > 0 ? "block" : "none";
     if (typeof updatePendingIssuingRecoverBanner === "function") updatePendingIssuingRecoverBanner();
+    if (!tbody) return;
     tbody.innerHTML = "";
     for (const r of pendingIssuing) {
         const hasAlloc = !!(r.allocations && r.allocations.length);
@@ -34737,19 +34751,36 @@ async function revertApprovedRequisitionsFromEntries(entries) {
 }
 
 async function clearPendingIssuing() {
-    if (pendingIssuing.length === 0) return;
-    if (!confirm(`Clear all ${pendingIssuing.length} pending issuing entries? Nothing will be saved to inventory.\n\nApproved requests in this list will return to Pending so they can be approved or rejected again.\n\nAdmin can restore this list within 5 minutes.`)) {
+    // Force-clear any leftover DOM rows even if the JS array is already empty
+    const tbody = document.getElementById("pendingIssuingBody");
+    const card = document.getElementById("pendingIssuingCard");
+    const count = (pendingIssuing && pendingIssuing.length) ? pendingIssuing.length : 0;
+    const hasDomRows = tbody && tbody.rows && tbody.rows.length > 0;
+
+    if (count === 0 && !hasDomRows) {
+        if (card) card.style.display = "none";
+        if (tbody) tbody.innerHTML = "";
+        alert("Pending issuing list is already empty.");
         return;
     }
-    const snapshot = pendingIssuing.map(e => ({ ...e }));
-    pendingIssuingTrash = { items: snapshot, clearedAt: Date.now() };
+
+    const n = count || (hasDomRows ? tbody.rows.length : 0);
+    if (!confirm(`Clear all ${n} pending issuing entries? Nothing will be saved to inventory.\n\nApproved requests in this list will return to Pending so they can be approved or rejected again.\n\nAdmin can restore this list within 5 minutes.`)) {
+        return;
+    }
+    const snapshot = (pendingIssuing || []).map(e => ({ ...e }));
+    pendingIssuingTrash = snapshot.length ? { items: snapshot, clearedAt: Date.now() } : pendingIssuingTrash;
     pendingIssuing = [];
+    if (tbody) tbody.innerHTML = "";
+    if (card) card.style.display = "none";
+    const countEl = document.getElementById("pendingIssuingCount");
+    if (countEl) countEl.textContent = "0";
     renderPendingIssuing();
     const reverted = await revertApprovedRequisitionsFromEntries(snapshot);
     saveAll();
     updatePendingIssuingRecoverBanner();
-    schedulePendingIssuingRecoverTick();
-    alert(`✅ Pending issuing list cleared.${reverted ? `\n${reverted} approved request(s) moved back to Pending.` : ""}${currentUserRole === "admin" ? "\nYou can restore the list within 5 minutes." : ""}`);
+    if (snapshot.length) schedulePendingIssuingRecoverTick();
+    alert(`✅ Pending issuing list cleared.${reverted ? `\n${reverted} approved request(s) moved back to Pending.` : ""}${currentUserRole === "admin" && snapshot.length ? "\nYou can restore the list within 5 minutes." : ""}`);
 }
 
 async function recoverPendingIssuing() {
