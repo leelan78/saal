@@ -1081,6 +1081,99 @@
         .exp-row-info { grid-template-columns: 1.3fr 0.8fr 1fr 1fr; padding: 6px 0; border-bottom: 1px solid #edf2f7; font-size: 14px; }
         .exp-row-loc { grid-template-columns: 0.8fr 1.2fr 1fr 34px; }
         .loc-pill { display: inline-block; margin-left: 4px; padding: 0 7px; border-radius: 10px; background: #f0fff4; color: #276749; border: 1px solid #c6f6d5; font-size: 12px; font-weight: 600; white-space: nowrap; }
+        /* Nicely grouped same-expiry / multi-location breakdown */
+        .exp-group-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 12px 14px;
+            margin-bottom: 12px;
+            background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+            box-shadow: 0 1px 3px rgba(26, 60, 92, 0.06);
+        }
+        .exp-group-card:last-child { margin-bottom: 0; }
+        .exp-group-head {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px 12px;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px dashed #e2e8f0;
+        }
+        .exp-group-head .exp-date {
+            font-size: 15px;
+            font-weight: 700;
+            color: #1a3c5c;
+        }
+        .exp-group-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            font-size: 12px;
+            color: #4a5568;
+        }
+        .exp-group-total {
+            font-weight: 800;
+            color: #15803d;
+            font-size: 14px;
+        }
+        .exp-loc-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 8px;
+        }
+        .exp-loc-chip {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 8px 10px;
+            border-radius: 10px;
+            background: #edf2f7;
+            border: 1px solid #e2e8f0;
+            font-size: 13px;
+        }
+        .exp-loc-chip .loc-name {
+            font-weight: 700;
+            color: #1e40af;
+        }
+        .exp-loc-chip .loc-qty {
+            font-weight: 800;
+            color: #15803d;
+            white-space: nowrap;
+        }
+        .exp-loc-chip.single {
+            background: #f0fff4;
+            border-color: #c6f6d5;
+        }
+        .pending-recover-banner {
+            display: none;
+            margin: 10px 0 0;
+            padding: 10px 14px;
+            border-radius: 10px;
+            background: #fffaf0;
+            border: 1px solid #fbd38d;
+            color: #7b341e;
+            font-size: 13px;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .pending-recover-banner.show { display: flex; }
+        .pending-recover-banner button {
+            padding: 6px 12px;
+            font-size: 12px;
+            background: #d69e2e;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 700;
+        }
+        .pending-recover-banner button:hover { background: #b7791f; }
         .role-banner { margin: 10px 0; padding: 10px 14px; border-radius: 8px; background: #fffaf0; border: 1px solid #fbd38d; color: #7b341e; font-size: 14px; }
         body.perm-noedit #Receiving .form-card,
         body.perm-noedit #Issuing .form-card,
@@ -1115,6 +1208,48 @@
         .alert-table th { position: sticky; top: 0; z-index: 1; text-align: left; }
         .alert-table td, .alert-table th { padding: 8px 10px; }
         .alert-sub { margin-top: 2px; font-size: 11px; color: #718096; }
+
+        /* Smart type-ahead: only shows matches while typing (never dumps full list on focus) */
+        .gaki-ac-wrap { position: relative; }
+        .gaki-ac-menu {
+            position: absolute;
+            left: 0; right: 0;
+            top: calc(100% + 4px);
+            max-height: 240px;
+            overflow-y: auto;
+            background: #fff;
+            border: 1px solid #cbd5e0;
+            border-radius: 10px;
+            box-shadow: 0 12px 28px rgba(26,60,92,0.18);
+            z-index: 9000;
+            display: none;
+            padding: 4px;
+        }
+        .gaki-ac-menu.open { display: block; }
+        .gaki-ac-item {
+            padding: 8px 10px;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #2d3748;
+            cursor: pointer;
+            line-height: 1.3;
+        }
+        .gaki-ac-item:hover, .gaki-ac-item.active {
+            background: #ebf4ff;
+            color: #1a3c5c;
+        }
+        .gaki-ac-item mark {
+            background: #fef3c7;
+            color: inherit;
+            padding: 0;
+            font-weight: 700;
+        }
+        .gaki-ac-empty {
+            padding: 10px;
+            font-size: 12px;
+            color: #a0aec0;
+            font-style: italic;
+        }
     </style>
 
     <!-- Firebase (real-time shared database) -->
@@ -1539,6 +1674,10 @@
                     <button onclick="processAllIssuing()" class="btn-success">✅ PROCESS ALL &amp; UPDATE INVENTORY</button>
                     <button onclick="clearPendingIssuing()" class="btn-clear-all" style="margin-left: 10px;">🗑️ Clear List</button>
                 </div>
+                <div id="pendingIssuingRecoverBanner" class="pending-recover-banner">
+                    <span id="pendingIssuingRecoverText">Pending list was cleared. Admin can restore it for a short time.</span>
+                    <button type="button" onclick="recoverPendingIssuing()">↩️ Restore cleared list</button>
+                </div>
             </div>
 
             <h3>📜 Recent Issuing Transactions</h3>
@@ -1582,8 +1721,12 @@
                         <input type="text" id="reqUnit" list="unitList" placeholder="Vials, Cartons, Packs...">
                     </div>
                     <div class="form-group">
+                        <label>👤 Recipient</label>
+                        <input type="text" id="reqRecipient" list="recipientList" placeholder="Patient / Department / Ward (saved for next time)">
+                    </div>
+                    <div class="form-group">
                         <label>📝 Notes</label>
-                        <input type="text" id="reqNotes" placeholder="Reason / department / anything useful">
+                        <input type="text" id="reqNotes" placeholder="Reason / anything useful">
                     </div>
                 </div>
                 <div style="margin-top: 20px;">
@@ -1597,7 +1740,7 @@
                 <div class="table-wrapper">
                     <table id="pendingMyRequisitionsTable">
                         <thead>
-                            <tr><th>Date</th><th>Drug/Item</th><th>Location</th><th>Qty</th><th>Available</th><th>Unit</th><th>Notes</th><th></th></tr>
+                            <tr><th>Date</th><th>Drug/Item</th><th>Location</th><th>Qty</th><th>Available</th><th>Unit</th><th>Recipient</th><th>Notes</th><th></th></tr>
                         </thead>
                         <tbody id="pendingMyRequisitionsBody"></tbody>
                     </table>
@@ -1613,18 +1756,21 @@
                 <div class="table-wrapper">
                     <table id="pendingApprovalsTable">
                         <thead>
-                            <tr><th>Date</th><th>Drug/Item</th><th>Location</th><th>Requested Qty</th><th>Available Now</th><th>Approve Qty</th><th>Unit</th><th>Requested By</th><th>Notes</th><th></th></tr>
+                            <tr><th>Date</th><th>Drug/Item</th><th>Location</th><th>Requested Qty</th><th>Available Now</th><th>Approve Qty</th><th>Unit</th><th>Recipient</th><th>Requested By</th><th>Notes</th><th></th></tr>
                         </thead>
                         <tbody id="pendingApprovalsBody"></tbody>
                     </table>
                 </div>
             </div>
 
-            <h3>📜 <span id="requisitionsHistoryLabel">All Requests</span></h3>
+            <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between; margin: 10px 0 8px;">
+                <h3 style="margin:0;">📜 <span id="requisitionsHistoryLabel">All Requests</span></h3>
+                <button type="button" class="btn-outline print-btn" onclick="printDailyIssuedRequests()" title="Print today's issued items that came from requests">🖨️ Print daily issued requests</button>
+            </div>
             <div class="table-wrapper">
                 <table id="requisitionsTable">
                     <thead>
-                        <tr><th>Date</th><th>Drug/Item</th><th>Location</th><th>Qty Requested</th><th>Qty Approved</th><th>Unit</th><th>Requested By</th><th>Status</th><th>Handled By</th><th>Notes</th></tr>
+                        <tr><th>Date</th><th>Drug/Item</th><th>Location</th><th>Qty Requested</th><th>Qty Approved</th><th>Unit</th><th>Recipient</th><th>Requested By</th><th>Status</th><th>Handled By</th><th>Notes</th></tr>
                     </thead>
                     <tbody id="requisitionsBody"></tbody>
                 </table>
@@ -31397,6 +31543,7 @@ async function renderTeamList() {
             row.insertCell(0).textContent = (x.u.email || "(unknown)") + "  — removed";
             row.insertCell(1).textContent = "No access";
             const actCell = row.insertCell(2);
+            actCell.style.whiteSpace = "nowrap";
             const back = document.createElement("button");
             back.type = "button";
             back.className = "team-mini-btn";
@@ -31404,6 +31551,14 @@ async function renderTeamList() {
             back.textContent = "↩️ Restore";
             back.onclick = () => restoreTeamMember(x.id, x.u.email, x.u.previousRole);
             actCell.appendChild(back);
+            actCell.appendChild(document.createTextNode(" "));
+            const del = document.createElement("button");
+            del.type = "button";
+            del.className = "team-mini-btn danger";
+            del.textContent = "🗑️ Delete permanently";
+            del.title = "Remove this user from the list forever (they stay removed from access)";
+            del.onclick = () => deleteTeamMemberPermanently(x.id, x.u.email);
+            actCell.appendChild(del);
         });
         if (snap.empty) tbody.innerHTML = "<tr><td colspan='3'>No team members yet — add one above.</td></tr>";
     } catch (e) {
@@ -31546,6 +31701,18 @@ async function restoreTeamMember(uid, email, previousRole) {
         renderTeamList();
     } catch (e) {
         alert("❌ Could not restore this user: " + e.message);
+    }
+}
+
+async function deleteTeamMemberPermanently(uid, email) {
+    if (currentUserRole !== "admin") return;
+    if (!confirm("Permanently delete " + email + " from the team list?\n\nThis only removes their record from Manage Team. They already have no access. This cannot be undone from this screen.")) return;
+    try {
+        await db.collection("gaki_users").doc(uid).delete();
+        teamMsg("✅ " + email + " deleted from the list.", "ok");
+        renderTeamList();
+    } catch (e) {
+        alert("❌ Could not delete this user: " + e.message);
     }
 }
 
@@ -32018,6 +32185,7 @@ function addRequisitionToPending() {
     const location = document.getElementById("reqLocation").value.trim();
     const qty = parseInt(document.getElementById("reqQty").value) || 0;
     const unit = document.getElementById("reqUnit").value.trim();
+    const recipient = (document.getElementById("reqRecipient")?.value || "").trim();
     const notes = document.getElementById("reqNotes").value.trim();
 
     if (!date || !drug || qty <= 0) {
@@ -32036,11 +32204,13 @@ function addRequisitionToPending() {
         location: resolvedLocation,
         qtyRequested: qty,
         unit: resolvedUnit,
+        recipient: recipient,
         notes: notes
     });
 
     if (resolvedLocation) rememberLocationIfNew(resolvedLocation);
     if (resolvedUnit) rememberUnitIfNew(resolvedUnit);
+    if (recipient) rememberRecipientIfNew(recipient);
 
     renderPendingRequisitions();
     clearRequisitionForm(true);
@@ -32079,9 +32249,10 @@ function renderPendingRequisitions() {
             ? (stockItem ? `${stockItem.balance} ${stockItem.unit || ""}` : "—")
             : "🔒 Admin only";
         row.insertCell(5).textContent = r.unit || "";
-        row.insertCell(6).textContent = r.notes || "";
+        row.insertCell(6).textContent = r.recipient || "";
+        row.insertCell(7).textContent = r.notes || "";
 
-        const actionCell = row.insertCell(7);
+        const actionCell = row.insertCell(8);
         const removeBtn = document.createElement("button");
         removeBtn.className = "btn-delete";
         removeBtn.textContent = "🗑️";
@@ -32109,6 +32280,8 @@ function clearRequisitionForm(keepDate) {
     document.getElementById("reqLocation").value = "";
     document.getElementById("reqQty").value = "";
     document.getElementById("reqUnit").value = "";
+    const recip = document.getElementById("reqRecipient");
+    if (recip) recip.value = "";
     document.getElementById("reqNotes").value = "";
     document.getElementById("reqAvailableQty").textContent = "";
     if (!keepDate) document.getElementById("reqDate").value = new Date().toISOString().split('T')[0];
@@ -32133,6 +32306,7 @@ async function submitAllRequisitions() {
                 qtyRequested: r.qtyRequested,
                 qtyApproved: null,
                 unit: r.unit,
+                recipient: r.recipient || "",
                 notes: r.notes,
                 requestedBy: currentUserEmail,
                 requestedAt: new Date().toISOString(),
@@ -32203,11 +32377,12 @@ function renderRequisitions() {
                 qtyInput.value = r.qtyApproved != null ? r.qtyApproved : r.qtyRequested;
                 qtyCell.appendChild(qtyInput);
 
-                row.insertCell(6);
-                row.insertCell(7);
-                row.insertCell(8);
+                row.insertCell(6); // unit
+                row.insertCell(7); // recipient
+                row.insertCell(8); // requested by
+                row.insertCell(9); // notes
 
-                const actionCell = row.insertCell(9);
+                const actionCell = row.insertCell(10);
                 const approveBtn = document.createElement("button");
                 approveBtn.className = "btn-success";
                 approveBtn.textContent = "✅ Approve";
@@ -32230,8 +32405,9 @@ function renderRequisitions() {
             const qtyInputEl = row.cells[5].querySelector("input");
             if (qtyInputEl) qtyInputEl.title = stockItem ? `Available: ${stockItem.balance} ${stockItem.unit || ""}` : "";
             row.cells[6].textContent = r.unit || "";
-            row.cells[7].textContent = r.requestedBy || "";
-            row.cells[8].textContent = r.notes || "";
+            row.cells[7].textContent = r.recipient || "";
+            row.cells[8].textContent = r.requestedBy || "";
+            row.cells[9].textContent = r.notes || "";
 
             approvalsBody.appendChild(row);
         }
@@ -32250,17 +32426,18 @@ function renderRequisitions() {
         row.insertCell(3).textContent = r.qtyRequested || 0;
         row.insertCell(4).textContent = r.qtyApproved != null ? r.qtyApproved : "—";
         row.insertCell(5).textContent = r.unit || "";
-        row.insertCell(6).textContent = r.requestedBy || "";
+        row.insertCell(6).textContent = r.recipient || "";
+        row.insertCell(7).textContent = r.requestedBy || "";
 
-        const statusCell = row.insertCell(7);
+        const statusCell = row.insertCell(8);
         const badge = document.createElement("span");
         badge.textContent = r.status === "pending" ? "⏳ Pending" : r.status === "approved" ? "✅ Approved" : "❌ Rejected";
         badge.style.fontWeight = "600";
         badge.style.color = r.status === "pending" ? "#b7791f" : r.status === "approved" ? "#276749" : "#c53030";
         statusCell.appendChild(badge);
 
-        row.insertCell(8).textContent = r.reviewedBy || "";
-        row.insertCell(9).textContent = r.notes || "";
+        row.insertCell(9).textContent = r.reviewedBy || "";
+        row.insertCell(10).textContent = r.notes || "";
     }
 }
 
@@ -32310,9 +32487,10 @@ async function approveRequisition(id) {
         batch: "",
         qty: qty,
         unit: req.unit,
-        recipient: req.requestedBy,
-        requisitioner: req.requestedBy,
-        issuedBy: currentUserEmail
+        recipient: req.recipient || req.requestedBy || "",
+        requisitioner: req.requestedBy || "",
+        issuedBy: currentUserEmail,
+        requisitionId: req.id
     });
     renderPendingIssuing();
     saveAll();
@@ -32623,9 +32801,12 @@ function renderExpModal() {
         applyBtn.textContent = "Apply";
         cancelBtn.textContent = "Cancel";
         m.rows.forEach((r, i) => {
-            const sameAsAbove = i > 0 && (m.rows[i - 1].expiry || "") === (r.expiry || "");   // don't repeat the same expiry date
-            html += `<div class="exp-row exp-row-issue">
-                <div>${sameAsAbove ? `<span class="exp-same">↳ same expiry (${escapeHtml(fmtExpiry(r.expiry))})</span>` : `<strong>${escapeHtml(fmtExpiry(r.expiry))}</strong>`}${r.loc ? ` <span class="loc-pill">📍 ${escapeHtml(r.loc)}</span>` : ""}${sameAsAbove ? "" : `<div class="exp-sub">${expBadge(r.expiry)}</div>`}</div>
+            const sameAsAbove = i > 0 && (m.rows[i - 1].expiry || "") === (r.expiry || "");
+            html += `<div class="exp-row exp-row-issue" style="${sameAsAbove ? "background:#f7fafc;border-radius:8px;padding:8px 6px;margin:2px 0;" : "padding:8px 6px;"}">
+                <div>${sameAsAbove
+                    ? `<div style="font-size:12px;color:#718096;margin-bottom:2px;">Same expiry · different location</div><span class="loc-pill">📍 ${escapeHtml(r.loc || "Unspecified")}</span>`
+                    : `<strong>${escapeHtml(fmtExpiry(r.expiry))}</strong>${r.loc ? ` <span class="loc-pill">📍 ${escapeHtml(r.loc)}</span>` : ""}<div class="exp-sub">${expBadge(r.expiry)}</div>`}
+                </div>
                 <div class="exp-avail"><span class="avail-qty">${r.available}</span>${unit} available</div>
                 <input type="number" min="0" max="${r.available}" placeholder="0" value="${r.qty === "" || r.qty === undefined ? "" : r.qty}" oninput="expModalSet(${i}, 'qty', this.value)">
                 <button type="button" class="exp-all" title="Take all of this expiry" onclick="expModalSet(${i}, 'qty', ${r.available}, true)">all</button>
@@ -32647,8 +32828,7 @@ function renderExpModal() {
         addWrap.style.display = "none";
         applyBtn.style.display = "none";
         cancelBtn.textContent = "Close";
-        html += `<div class="exp-row exp-row-info exp-row-head"><span>Expiry date / location</span><span>Qty left</span><span>Days left</span><span>Status</span></div>`;
-        // one row per expiry date; when the same expiry sits in several locations they are listed under it
+        // Group by expiry; same expiry across locations shows as one card with location chips
         const groups = [];
         const gAt = new Map();
         m.rows.forEach(r => {
@@ -32656,19 +32836,32 @@ function renderExpModal() {
             if (!gAt.has(k)) { gAt.set(k, groups.length); groups.push({ expiry: k, parts: [] }); }
             groups[gAt.get(k)].parts.push(r);
         });
+        if (groups.length === 0) {
+            html += `<div class="empty-state" style="padding:20px;">No batch / location breakdown available.</div>`;
+        }
         groups.forEach(g => {
             const info = getExpiryStatus(g.expiry);
-            let days = "N/A";
-            if (info.daysLeft !== null) days = info.daysLeft < 0 ? `Expired ${Math.abs(info.daysLeft)} day(s) ago` : `${info.daysLeft} days`;
+            let days = "No date";
+            if (info.daysLeft !== null) days = info.daysLeft < 0 ? `Expired ${Math.abs(info.daysLeft)}d ago` : `${info.daysLeft} days left`;
             const total = g.parts.reduce((sum, p) => sum + (parseInt(p.qty) || 0), 0);
-            const locLines = g.parts.filter(p => p.loc).map(p => g.parts.length > 1
-                ? `<div class="exp-sub"><span class="loc-pill">📍 ${escapeHtml(p.loc)}</span> <strong class="avail-qty">${p.qty}</strong></div>`
-                : `<div class="exp-sub"><span class="loc-pill">📍 ${escapeHtml(p.loc)}</span></div>`).join("");
-            html += `<div class="exp-row exp-row-info">
-                <span><strong>${escapeHtml(fmtExpiry(g.expiry))}</strong>${locLines}</span>
-                <span><strong class="avail-qty">${total}</strong></span>
-                <span>${days}</span>
-                <span>${expBadge(g.expiry)}</span>
+            const multi = g.parts.length > 1;
+            const chips = g.parts.map(p => {
+                const loc = (p.loc || "").trim() || "Unspecified";
+                return `<div class="exp-loc-chip${multi ? "" : " single"}">
+                    <span class="loc-name">📍 ${escapeHtml(loc)}</span>
+                    <span class="loc-qty">${p.qty}${m.unit ? " " + escapeHtml(m.unit) : ""}</span>
+                </div>`;
+            }).join("");
+            html += `<div class="exp-group-card">
+                <div class="exp-group-head">
+                    <div class="exp-date">${escapeHtml(fmtExpiry(g.expiry))}</div>
+                    <div class="exp-group-meta">
+                        ${expBadge(g.expiry)}
+                        <span>${days}</span>
+                        <span class="exp-group-total">Total ${total}${m.unit ? " " + escapeHtml(m.unit) : ""}</span>
+                    </div>
+                </div>
+                <div class="exp-loc-grid">${chips}</div>
             </div>`;
         });
     }
@@ -33199,6 +33392,35 @@ document.addEventListener("keydown", function (e) {
     guard(["addRequisitionToPending", "removePendingRequisition", "clearPendingRequisitions", "submitAllRequisitions", "clearRequisitionForm"],
           "requisition", "Your account can't send or edit requests.");
 })();
+
+function printDailyIssuedRequests() {
+    const today = new Date().toISOString().slice(0, 10);
+    // Prefer items that came from requisitions; fall back to all of today's issuing
+    const fromReq = issuingData.filter(r => r.date === today && r.requisitionId);
+    const rows = fromReq.length ? fromReq : issuingData.filter(r => r.date === today);
+    if (rows.length === 0) {
+        alert("No issuing recorded for today yet.");
+        return;
+    }
+    const body = `<table><thead><tr>
+        <th>Date</th><th>Drug/Item</th><th>Location</th><th>Qty</th><th>Unit</th>
+        <th>Recipient</th><th>Sales Rep / Requisitioner</th><th>Issued By</th>
+    </tr></thead><tbody>` + rows.map(r => `<tr>
+        <td>${escapeHtml(r.date || "")}</td>
+        <td>${escapeHtml(r.drug || "")}</td>
+        <td>${escapeHtml(r.location || "")}</td>
+        <td>${r.qty ?? ""}</td>
+        <td>${escapeHtml(r.unit || "")}</td>
+        <td>${escapeHtml(r.recipient || "")}</td>
+        <td>${escapeHtml(r.requisitioner || "")}</td>
+        <td>${escapeHtml(r.issuedBy || "")}</td>
+    </tr>`).join("") + `</tbody></table>`;
+    printHtmlDoc(
+        fromReq.length ? "Daily issued requests" : "Daily issuing",
+        [`Date: ${today}`, `${rows.length} line(s)`, fromReq.length ? "Only items linked to approved requests" : "All issuing for the day"],
+        body
+    );
+}
 
 function printHtmlDoc(title, metaLines, bodyHtml) {
     if (!can("print")) { alert("Your account doesn't have permission to print."); return; }
@@ -34334,6 +34556,7 @@ function renderPendingIssuing() {
     const tbody = document.getElementById("pendingIssuingBody");
     document.getElementById("pendingIssuingCount").textContent = pendingIssuing.length;
     card.style.display = pendingIssuing.length > 0 ? "block" : "none";
+    if (typeof updatePendingIssuingRecoverBanner === "function") updatePendingIssuingRecoverBanner();
     tbody.innerHTML = "";
     for (const r of pendingIssuing) {
         const hasAlloc = !!(r.allocations && r.allocations.length);
@@ -34455,12 +34678,120 @@ function removePendingIssuing(pendingId) {
     renderPendingIssuing();
 }
 
-function clearPendingIssuing() {
-    if (pendingIssuing.length === 0) return;
-    if (confirm(`Clear all ${pendingIssuing.length} pending issuing entries? Nothing will be saved to inventory.`)) {
-        pendingIssuing = [];
-        renderPendingIssuing();
+let pendingIssuingTrash = null; // { items: [...], clearedAt: number }
+const PENDING_ISSUING_RECOVER_MS = 5 * 60 * 1000;
+let pendingIssuingRecoverTimer = null;
+
+function updatePendingIssuingRecoverBanner() {
+    const banner = document.getElementById("pendingIssuingRecoverBanner");
+    const textEl = document.getElementById("pendingIssuingRecoverText");
+    if (!banner) return;
+    if (!pendingIssuingTrash || currentUserRole !== "admin") {
+        banner.classList.remove("show");
+        return;
     }
+    const leftMs = PENDING_ISSUING_RECOVER_MS - (Date.now() - pendingIssuingTrash.clearedAt);
+    if (leftMs <= 0) {
+        pendingIssuingTrash = null;
+        banner.classList.remove("show");
+        return;
+    }
+    const secs = Math.ceil(leftMs / 1000);
+    const mm = Math.floor(secs / 60);
+    const ss = String(secs % 60).padStart(2, "0");
+    if (textEl) textEl.textContent = `Pending list was cleared (${pendingIssuingTrash.items.length} item(s)). Admin can restore within ${mm}:${ss}.`;
+    banner.classList.add("show");
+}
+
+function schedulePendingIssuingRecoverTick() {
+    if (pendingIssuingRecoverTimer) clearInterval(pendingIssuingRecoverTimer);
+    pendingIssuingRecoverTimer = setInterval(() => {
+        updatePendingIssuingRecoverBanner();
+        if (!pendingIssuingTrash) {
+            clearInterval(pendingIssuingRecoverTimer);
+            pendingIssuingRecoverTimer = null;
+        }
+    }, 1000);
+}
+
+async function revertApprovedRequisitionsFromEntries(entries) {
+    const ids = [...new Set((entries || []).map(e => e.requisitionId).filter(Boolean))];
+    if (ids.length === 0) return 0;
+    let reverted = 0;
+    for (const id of ids) {
+        try {
+            await requisitionsColRef.doc(id).update({
+                status: "pending",
+                qtyApproved: null,
+                reviewedBy: "",
+                reviewedAt: "",
+                revertedAt: new Date().toISOString(),
+                revertedReason: "Pending issuing list cleared before processing"
+            });
+            reverted++;
+        } catch (e) {
+            console.warn("Could not revert requisition", id, e);
+        }
+    }
+    return reverted;
+}
+
+async function clearPendingIssuing() {
+    if (pendingIssuing.length === 0) return;
+    if (!confirm(`Clear all ${pendingIssuing.length} pending issuing entries? Nothing will be saved to inventory.\n\nApproved requests in this list will return to Pending so they can be approved or rejected again.\n\nAdmin can restore this list within 5 minutes.`)) {
+        return;
+    }
+    const snapshot = pendingIssuing.map(e => ({ ...e }));
+    pendingIssuingTrash = { items: snapshot, clearedAt: Date.now() };
+    pendingIssuing = [];
+    renderPendingIssuing();
+    const reverted = await revertApprovedRequisitionsFromEntries(snapshot);
+    saveAll();
+    updatePendingIssuingRecoverBanner();
+    schedulePendingIssuingRecoverTick();
+    alert(`✅ Pending issuing list cleared.${reverted ? `\n${reverted} approved request(s) moved back to Pending.` : ""}${currentUserRole === "admin" ? "\nYou can restore the list within 5 minutes." : ""}`);
+}
+
+async function recoverPendingIssuing() {
+    if (currentUserRole !== "admin") {
+        alert("Only an admin can restore a cleared pending issuing list.");
+        return;
+    }
+    if (!pendingIssuingTrash) {
+        alert("Nothing to restore (the 5-minute window may have expired).");
+        updatePendingIssuingRecoverBanner();
+        return;
+    }
+    const leftMs = PENDING_ISSUING_RECOVER_MS - (Date.now() - pendingIssuingTrash.clearedAt);
+    if (leftMs <= 0) {
+        pendingIssuingTrash = null;
+        updatePendingIssuingRecoverBanner();
+        alert("The recovery window has expired.");
+        return;
+    }
+    if (!confirm(`Restore ${pendingIssuingTrash.items.length} pending issuing item(s)? Linked requests will be marked approved again.`)) return;
+
+    const items = pendingIssuingTrash.items.map(e => ({ ...e }));
+    // Re-approve linked requisitions
+    for (const e of items) {
+        if (!e.requisitionId) continue;
+        try {
+            await requisitionsColRef.doc(e.requisitionId).update({
+                status: "approved",
+                qtyApproved: e.qty,
+                reviewedBy: currentUserEmail,
+                reviewedAt: new Date().toISOString()
+            });
+        } catch (err) {
+            console.warn("Could not re-approve requisition", e.requisitionId, err);
+        }
+    }
+    pendingIssuing = items.concat(pendingIssuing);
+    pendingIssuingTrash = null;
+    renderPendingIssuing();
+    saveAll();
+    updatePendingIssuingRecoverBanner();
+    alert("✅ Pending issuing list restored.");
 }
 
 function commitIssuingEntry(entry) {
@@ -34516,6 +34847,7 @@ function commitIssuingEntry(entry) {
             requisitioner: entry.requisitioner || "",
             issuedBy: entry.issuedBy
         };
+        if (entry.requisitionId) historyRow.requisitionId = entry.requisitionId;
         if (usedAllocations && usedAllocations.length) historyRow.expirySplits = usedAllocations;
         issuingData.unshift(historyRow);
     }
@@ -36576,6 +36908,221 @@ document.getElementById("manualDrugReorder").addEventListener("keydown", functio
 document.getElementById("manualDrugExpiry").addEventListener("keydown", function(e) {
     if(e.key === "Enter") addDrugManually();
 });
+
+// ============================================================
+// SMART TYPE-AHEAD (no full list dump on focus)
+// Suggestions appear only after you type, sorted: prefix first, then contains.
+// ============================================================
+(function () {
+    const MAX_ITEMS = 14;
+    let activeInput = null;
+    let activeItems = [];
+    let activeIndex = -1;
+    let menuEl = null;
+
+    function ensureMenu() {
+        if (menuEl) return menuEl;
+        menuEl = document.createElement("div");
+        menuEl.className = "gaki-ac-menu";
+        menuEl.id = "gakiAcMenu";
+        document.body.appendChild(menuEl);
+        menuEl.addEventListener("mousedown", function (e) {
+            // prevent input blur before click applies
+            e.preventDefault();
+            const item = e.target.closest(".gaki-ac-item");
+            if (item && activeInput) {
+                applyValue(activeInput, item.dataset.value || item.textContent);
+                hideMenu();
+            }
+        });
+        return menuEl;
+    }
+
+    function getListId(input) {
+        return input.getAttribute("list") || input.dataset.suggestList || "";
+    }
+
+    function detachNativeList(input) {
+        const id = input.getAttribute("list");
+        if (id) {
+            input.dataset.suggestList = id;
+            input.removeAttribute("list");
+            input.setAttribute("autocomplete", "off");
+        }
+    }
+
+    function readOptions(listId) {
+        if (!listId) return [];
+        const dl = document.getElementById(listId);
+        if (!dl) return [];
+        return Array.from(dl.querySelectorAll("option"))
+            .map(o => (o.value || o.textContent || "").trim())
+            .filter(Boolean);
+    }
+
+    function rankMatches(term, options) {
+        const q = term.trim().toLowerCase();
+        if (!q) return [];
+        const starts = [];
+        const contains = [];
+        const seen = new Set();
+        for (const opt of options) {
+            const low = opt.toLowerCase();
+            if (seen.has(low)) continue;
+            seen.add(low);
+            if (low.startsWith(q)) starts.push(opt);
+            else if (low.includes(q)) contains.push(opt);
+        }
+        starts.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
+        contains.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
+        return starts.concat(contains).slice(0, MAX_ITEMS);
+    }
+
+    function highlight(text, term) {
+        const q = term.trim();
+        if (!q) return escapeHtml(text);
+        const low = text.toLowerCase();
+        const i = low.indexOf(q.toLowerCase());
+        if (i < 0) return escapeHtml(text);
+        return escapeHtml(text.slice(0, i)) + "<mark>" + escapeHtml(text.slice(i, i + q.length)) + "</mark>" + escapeHtml(text.slice(i + q.length));
+    }
+
+    function positionMenu(input) {
+        const menu = ensureMenu();
+        const rect = input.getBoundingClientRect();
+        const width = Math.max(rect.width, 180);
+        menu.style.position = "fixed";
+        menu.style.left = Math.max(8, rect.left) + "px";
+        menu.style.top = (rect.bottom + 4) + "px";
+        menu.style.width = Math.min(width, window.innerWidth - 16) + "px";
+        menu.style.right = "auto";
+        // flip up if near bottom
+        const spaceBelow = window.innerHeight - rect.bottom;
+        if (spaceBelow < 180 && rect.top > 180) {
+            menu.style.top = "auto";
+            menu.style.bottom = (window.innerHeight - rect.top + 4) + "px";
+        } else {
+            menu.style.bottom = "auto";
+        }
+    }
+
+    function renderMenu(input, matches, term) {
+        const menu = ensureMenu();
+        activeInput = input;
+        activeItems = matches;
+        activeIndex = matches.length ? 0 : -1;
+        if (!matches.length) {
+            menu.innerHTML = '<div class="gaki-ac-empty">No matches — keep typing or enter a new value</div>';
+            menu.classList.add("open");
+            positionMenu(input);
+            return;
+        }
+        menu.innerHTML = matches.map((m, i) =>
+            `<div class="gaki-ac-item${i === 0 ? " active" : ""}" data-value="${escapeHtml(m)}" data-idx="${i}">${highlight(m, term)}</div>`
+        ).join("");
+        menu.classList.add("open");
+        positionMenu(input);
+    }
+
+    function hideMenu() {
+        if (menuEl) menuEl.classList.remove("open");
+        activeInput = null;
+        activeItems = [];
+        activeIndex = -1;
+    }
+
+    function applyValue(input, value) {
+        input.value = value;
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+        input.dispatchEvent(new Event("change", { bubbles: true }));
+        input.focus();
+    }
+
+    function setActive(idx) {
+        if (!menuEl || !activeItems.length) return;
+        activeIndex = (idx + activeItems.length) % activeItems.length;
+        menuEl.querySelectorAll(".gaki-ac-item").forEach((el, i) => {
+            el.classList.toggle("active", i === activeIndex);
+            if (i === activeIndex) el.scrollIntoView({ block: "nearest" });
+        });
+    }
+
+    function onFocusIn(e) {
+        const input = e.target;
+        if (!input || input.tagName !== "INPUT") return;
+        if (!(input.hasAttribute("list") || input.dataset.suggestList)) return;
+        detachNativeList(input);
+        // Do NOT open full list on focus — wait for typing
+        if (!input.value.trim()) hideMenu();
+    }
+
+    function onInput(e) {
+        const input = e.target;
+        if (!input || input.tagName !== "INPUT") return;
+        if (!(input.dataset.suggestList || input.hasAttribute("list"))) return;
+        detachNativeList(input);
+        const term = input.value || "";
+        if (!term.trim()) {
+            hideMenu();
+            return;
+        }
+        const options = readOptions(input.dataset.suggestList);
+        const matches = rankMatches(term, options);
+        renderMenu(input, matches, term);
+    }
+
+    function onKeyDown(e) {
+        if (!menuEl || !menuEl.classList.contains("open") || !activeInput) return;
+        if (e.target !== activeInput) return;
+        if (e.key === "ArrowDown") {
+            e.preventDefault();
+            setActive(activeIndex < 0 ? 0 : activeIndex + 1);
+        } else if (e.key === "ArrowUp") {
+            e.preventDefault();
+            setActive(activeIndex < 0 ? 0 : activeIndex - 1);
+        } else if (e.key === "Enter") {
+            if (activeIndex >= 0 && activeItems[activeIndex]) {
+                e.preventDefault();
+                applyValue(activeInput, activeItems[activeIndex]);
+                hideMenu();
+            }
+        } else if (e.key === "Escape") {
+            hideMenu();
+        }
+    }
+
+    function onFocusOut(e) {
+        // slight delay so mousedown on menu can fire first
+        setTimeout(() => {
+            if (menuEl && !menuEl.contains(document.activeElement) && document.activeElement !== activeInput) {
+                hideMenu();
+            }
+        }, 120);
+    }
+
+    document.addEventListener("focusin", onFocusIn, true);
+    document.addEventListener("input", onInput, true);
+    document.addEventListener("keydown", onKeyDown, true);
+    document.addEventListener("focusout", onFocusOut, true);
+    window.addEventListener("resize", hideMenu);
+    window.addEventListener("scroll", function (e) {
+        if (activeInput && menuEl && menuEl.classList.contains("open")) positionMenu(activeInput);
+    }, true);
+
+    // Convert existing inputs once (and keep datalists as the option source)
+    function detachAll() {
+        document.querySelectorAll("input[list]").forEach(detachNativeList);
+    }
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", detachAll);
+    } else {
+        detachAll();
+    }
+    // Periodically catch dynamically added pending-row inputs
+    setInterval(detachAll, 1500);
+
+    window.gakiSmartSuggestHide = hideMenu;
+})();
 
 console.log("✅ Pharmacy Inventory System loaded!");
 console.log("📍 Location dropdown with type-ahead support");
