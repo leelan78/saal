@@ -1328,7 +1328,7 @@
 </div>
 
 <!-- MAIN INVENTORY SYSTEM -->
-<div id="gakiSyncStatus" style="display: none; position: sticky; top: 0px; z-index: 9999; padding: 8px 14px; font: 13px system-ui, sans-serif; text-align: center; background: rgb(230, 247, 237); color: rgb(20, 108, 46); border-bottom: 2px solid rgb(52, 168, 83);">✅ Synced from cloud — 740 item(s)</div>
+<div id="gakiSyncStatus" role="status" aria-live="polite" style="position:fixed; right:16px; bottom:16px; z-index:9999; max-width:min(360px, calc(100vw - 32px)); padding:8px 14px; border-radius:10px; font:13px system-ui, sans-serif; box-shadow:0 4px 14px rgba(0,0,0,.18); opacity:0; visibility:hidden; transform:translateY(8px); transition:opacity .25s ease, transform .25s ease, visibility .25s; pointer-events:none;"></div>
 <div id="mainApp" style="display: none;">
     <div class="container">
         <div class="header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
@@ -1743,7 +1743,11 @@
 
             <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between; margin: 10px 0 8px;">
                 <h3 style="margin:0;">📜 <span id="requisitionsHistoryLabel">All Requests</span></h3>
-                <button type="button" class="btn-outline print-btn" onclick="printDailyIssuedRequests()" title="Print today's issued items that came from requests">🖨️ Print daily issued requests</button>
+                <span style="display:inline-flex; flex-wrap:wrap; gap:8px; align-items:center;">
+                    <label for="dailyPrintDate" style="font-size:13px; margin:0;">Date:</label>
+                    <input type="date" id="dailyPrintDate" style="width:auto; margin:0;" title="Choose the day to print">
+                    <button type="button" class="btn-outline print-btn" onclick="printDailyIssuedRequests()" title="Print approved issued requests for the chosen date">🖨️ Print daily issued requests</button>
+                </span>
             </div>
             <div class="table-wrapper">
                 <table id="requisitionsTable">
@@ -31922,6 +31926,7 @@ let firestoreReady = false;
 let applyingRemoteUpdate = false;
 let saveDebounceTimer = null;
 
+let syncStatusHideTimer = null;
 function setSyncStatus(message, kind) {
     const el = document.getElementById('gakiSyncStatus');
     if (!el) return;
@@ -31930,13 +31935,58 @@ function setSyncStatus(message, kind) {
         success: { bg: '#e6f7ed', color: '#146c2e', border: '#34a853' },
         error:   { bg: '#fdecea', color: '#a30000', border: '#d93025' }
     };
-    const s = styles[kind] || styles.info;
-    el.style.background = s.bg;
-    el.style.color = s.color;
-    el.style.borderBottom = '2px solid ' + s.border;
-    el.style.display = 'block';
+    const st = styles[kind] || styles.info;
+    clearTimeout(syncStatusHideTimer);
+    el.style.background = st.bg;
+    el.style.color = st.color;
+    el.style.border = '1px solid ' + st.border;
     el.textContent = message;
+    // Fixed-position overlay: showing/hiding only changes opacity, so nothing on the page moves.
+    el.style.visibility = 'visible';
+    el.style.opacity = '1';
+    el.style.transform = 'translateY(0)';
+    if (kind === 'error') {
+        el.style.pointerEvents = 'auto';
+        el.style.cursor = 'pointer';
+        el.title = 'Click to dismiss';
+        el.onclick = () => hideSyncStatus(0);
+    } else {
+        el.style.pointerEvents = 'none';
+        el.style.cursor = '';
+        el.title = '';
+        el.onclick = null;
+    }
 }
+function hideSyncStatus(delay) {
+    clearTimeout(syncStatusHideTimer);
+    syncStatusHideTimer = setTimeout(() => {
+        const el = document.getElementById('gakiSyncStatus');
+        if (!el) return;
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(8px)';
+        el.style.pointerEvents = 'none';
+        setTimeout(() => { if (el.style.opacity === '0') el.style.visibility = 'hidden'; }, 300);
+    }, delay);
+}
+
+// Key-order-independent JSON so we can tell "same data" from "different data"
+// (Firestore hands maps back with sorted keys, local objects keep insertion order).
+function stableStringify(v) {
+    if (v === null || typeof v !== 'object') return JSON.stringify(v);
+    if (Array.isArray(v)) return '[' + v.map(stableStringify).join(',') + ']';
+    return '{' + Object.keys(v).sort().filter(k => v[k] !== undefined)
+        .map(k => JSON.stringify(k) + ':' + stableStringify(v[k])).join(',') + '}';
+}
+const SYNC_FIELDS = ['inventoryData','receivingData','issuingData','returnsData','customLocations','customUnits',
+    'customSuppliers','customReceivedBy','customRecipients','customCouriers','customRequisitioners'];
+function syncSignature(obj) {
+    const o = {};
+    SYNC_FIELDS.forEach(k => { o[k] = obj[k] === undefined ? null : obj[k]; });
+    return stableStringify(o);
+}
+let lastSyncedSig = '';     // signature of the data we last sent to / received from the cloud
+let pushInFlight = false;   // one write at a time; extra saves are merged into one follow-up write
+let pushQueued = false;
 
 function pushToFirestore() {
     if (applyingRemoteUpdate) return;
@@ -31945,8 +31995,9 @@ function pushToFirestore() {
         setSyncStatus('⏳ Waiting for cloud connection before saving — please wait a moment and try again if this stays up.', 'info');
         return;
     }
-    setSyncStatus('⏳ Saving to cloud...', 'info');
-    sharedDocRef.set({
+    if (pushInFlight) { pushQueued = true; return; }
+    pushInFlight = true;
+    const payload = {
         inventoryData,
         receivingData,
         issuingData,
@@ -31957,14 +32008,23 @@ function pushToFirestore() {
         customReceivedBy,
         customRecipients,
         customCouriers,
-        customRequisitioners,
+        customRequisitioners
+    };
+    try { lastSyncedSig = syncSignature(payload); } catch (e) { lastSyncedSig = ''; }
+    setSyncStatus('⏳ Saving to cloud...', 'info');
+    sharedDocRef.set({
+        ...payload,
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     }, { merge: true }).then(() => {
         setSyncStatus('✅ Saved to cloud — ' + inventoryData.length + ' item(s) — ' + new Date().toLocaleTimeString(), 'success');
-        setTimeout(() => { const el = document.getElementById('gakiSyncStatus'); if (el) el.style.display = 'none'; }, 4000);
+        hideSyncStatus(2500);
     }).catch(e => {
         console.warn('Firestore save error:', e);
+        lastSyncedSig = '';
         setSyncStatus('❌ Cloud save FAILED: ' + e.message + ' — your changes are only on this device right now.', 'error');
+    }).then(() => {
+        pushInFlight = false;
+        if (pushQueued) { pushQueued = false; pushToFirestore(); }
     });
 }
 
@@ -31997,11 +32057,34 @@ document.addEventListener('keydown', function(e) {
 
 let unsubShared = null;
 let unsubRequisitions = null;
+let hasAppliedFirstCloudSnapshot = false;
+let softRefreshTimer = null;
+
+// Re-draws the data after ANOTHER user saved, without moving the person who is working:
+// same tab, same scroll positions, same focused field, form dates untouched. Bursts are merged into one pass.
+function softRefreshFromCloud() {
+    clearTimeout(softRefreshTimer);
+    softRefreshTimer = setTimeout(() => {
+        const px = window.scrollX, py = window.scrollY;
+        const scrollers = Array.from(document.querySelectorAll('.table-wrapper, .modal-content, [style*="overflow"]'))
+            .map(el => [el, el.scrollTop, el.scrollLeft]);
+        const ae = document.activeElement;
+        const keep = ae && ae !== document.body && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName) ? ae : null;
+        const selStart = keep && typeof keep.selectionStart === 'number' ? keep.selectionStart : null;
+        const selEnd = keep && typeof keep.selectionEnd === 'number' ? keep.selectionEnd : null;
+        try { renderAll(); renderRequisitions(); } catch (e) { console.warn('Soft refresh error:', e); }
+        window.scrollTo(px, py);
+        scrollers.forEach(([el, t, l]) => { el.scrollTop = t; el.scrollLeft = l; });
+        if (keep && document.contains(keep) && document.activeElement !== keep) {
+            try { keep.focus({ preventScroll: true }); if (selStart !== null) keep.setSelectionRange(selStart, selEnd); } catch (e) {}
+        }
+    }, 150);
+}
 function startFirestoreSync() {
     if (unsubShared) { unsubShared(); unsubShared = null; }
     firestoreReady = false;
     setSyncStatus('⏳ Connecting to cloud...', 'info');
-    unsubShared = sharedDocRef.onSnapshot((doc) => {
+    unsubShared = sharedDocRef.onSnapshot({ includeMetadataChanges: false }, (doc) => {
         localStorage.removeItem('pharmacy_pending_push'); // clear stale flag from older versions
         // Offline/cache-only "doesn't exist" is not proof the cloud is empty - wait for the server
         if (!doc.exists && doc.metadata && doc.metadata.fromCache) return;
@@ -32017,7 +32100,17 @@ function startFirestoreSync() {
             pushToFirestore();
             return;
         }
+
+        // Echo of OUR OWN write (still pending on the server): the data is already on screen. Do nothing.
+        if (doc.metadata && doc.metadata.hasPendingWrites) { firestoreReady = true; return; }
+
         const data = doc.data();
+        const firstLoad = !hasAppliedFirstCloudSnapshot;
+        let incomingSig = '';
+        try { incomingSig = syncSignature(data); } catch (e) {}
+        // Same content we already have (our own save confirmed by the server): nothing to refresh.
+        if (!firstLoad && incomingSig && incomingSig === lastSyncedSig) { firestoreReady = true; return; }
+
         applyingRemoteUpdate = true;
         inventoryData = data.inventoryData || [];
         receivingData = data.receivingData || [];
@@ -32031,6 +32124,7 @@ function startFirestoreSync() {
         customRecipients = data.customRecipients || customRecipients;
         customCouriers = data.customCouriers || customCouriers;
         customRequisitioners = data.customRequisitioners || customRequisitioners;
+        lastSyncedSig = incomingSig;
 
         try {
             localStorage.setItem('pharmacy_inventory', JSON.stringify(inventoryData));
@@ -32040,13 +32134,16 @@ function startFirestoreSync() {
         } catch (e) {}
 
         if (systemInitialized) {
-            renderAll();
-            renderRequisitions();
+            if (firstLoad) { renderAll(); renderRequisitions(); }
+            else softRefreshFromCloud();   // a teammate saved: update quietly, keep this user exactly where they are
         }
+        hasAppliedFirstCloudSnapshot = true;
         firestoreReady = true;
         applyingRemoteUpdate = false;
-        setSyncStatus('✅ Synced from cloud — ' + inventoryData.length + ' item(s)', 'success');
-        setTimeout(() => { const el = document.getElementById('gakiSyncStatus'); if (el) el.style.display = 'none'; }, 4000);
+        if (firstLoad) {
+            setSyncStatus('✅ Synced from cloud — ' + inventoryData.length + ' item(s)', 'success');
+            hideSyncStatus(2500);
+        }
     }, (error) => {
         console.warn('Firestore sync error (staying on local data):', error);
         setSyncStatus('❌ Cloud connection FAILED: ' + error.message, 'error');
@@ -33405,12 +33502,20 @@ document.addEventListener("keydown", function (e) {
 })();
 
 function printDailyIssuedRequests() {
+    const dateEl = document.getElementById("dailyPrintDate");
     const today = new Date().toISOString().slice(0, 10);
-    // Prefer items that came from requisitions; fall back to all of today's issuing
-    const fromReq = issuingData.filter(r => r.date === today && r.requisitionId);
-    const rows = fromReq.length ? fromReq : issuingData.filter(r => r.date === today);
+    if (dateEl && !dateEl.value) dateEl.value = today;
+    const day = (dateEl && dateEl.value) || today;
+
+    // Only requests that were APPROVED and issued. Rejected (or sent back to pending) requests never print.
+    const statusById = new Map(requisitions.map(q => [q.id, q.status]));
+    const rows = issuingData.filter(r => {
+        if (r.date !== day || !r.requisitionId) return false;
+        const st = statusById.get(r.requisitionId);
+        return st === undefined || st === "approved";   // unknown = request record not loaded; it was issued, so it was approved
+    });
     if (rows.length === 0) {
-        alert("No issuing recorded for today yet.");
+        alert("No approved issued requests found for " + day + ".");
         return;
     }
     const body = `<table><thead><tr>
@@ -33427,8 +33532,8 @@ function printDailyIssuedRequests() {
         <td>${escapeHtml(r.issuedBy || "")}</td>
     </tr>`).join("") + `</tbody></table>`;
     printHtmlDoc(
-        fromReq.length ? "Daily issued requests" : "Daily issuing",
-        [`Date: ${today}`, `${rows.length} line(s)`, fromReq.length ? "Only items linked to approved requests" : "All issuing for the day"],
+        "Daily issued requests",
+        [`Date: ${day}`, `${rows.length} line(s)`, "Approved requests only"],
         body
     );
 }
@@ -33593,6 +33698,8 @@ function initSystem() {
 
     const reqDateEl = document.getElementById("reqDate");
     if (reqDateEl && !reqDateEl.value) reqDateEl.value = new Date().toISOString().split('T')[0];
+    const dailyPrintDateEl = document.getElementById("dailyPrintDate");
+    if (dailyPrintDateEl && !dailyPrintDateEl.value) dailyPrintDateEl.value = new Date().toISOString().split('T')[0];
 
     renderAll();
     systemInitialized = true;
@@ -33724,7 +33831,7 @@ function executeClearInventory() {
 }
 
 function renderAll() {
-    setDefaultDates();
+    setDefaultDates(true);   // only fills EMPTY date boxes, never overwrites what someone chose
     displayReceiving();
     displayIssuing();
     displayReturns();
@@ -33741,8 +33848,10 @@ function renderAll() {
     populateCourierDatalists();
     populateRequisitionerDatalists();
     
+    // Only open the starting tab on first load. After that, stay on whatever page the user is on.
+    var activeLink = document.querySelector(".tablinks.active");
     var defaultTab = document.getElementById("defaultOpen");
-    if (defaultTab) {
+    if (!activeLink && defaultTab) {
         defaultTab.click();
     }
 }
@@ -36032,16 +36141,12 @@ function exportExpiryReport() {
     link.click();
 }
 
-function setDefaultDates() {
+function setDefaultDates(onlyIfEmpty) {
     const today = new Date().toISOString().split('T')[0];
-    var receiptDate = document.getElementById("receiptDate");
-    var issueDate = document.getElementById("issueDate");
-    var searchDate = document.getElementById("searchDate");
-    var returnDate = document.getElementById("returnDate");
-    if(receiptDate) receiptDate.value = today;
-    if(issueDate) issueDate.value = today;
-    if(searchDate) searchDate.value = today;
-    if(returnDate) returnDate.value = today;
+    ["receiptDate", "issueDate", "searchDate", "returnDate"].forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el && (!onlyIfEmpty || !el.value)) el.value = today;
+    });
 }
 
 // ============================================================
